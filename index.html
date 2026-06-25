@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPCXUSD Signal Dashboard</title>
+    <title>SPCXUSD Live Trading Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
@@ -13,7 +13,7 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: #e2e8f0;
             padding: 20px;
@@ -42,6 +42,41 @@
             gap: 24px;
             font-size: 14px;
             color: #94a3b8;
+        }
+        
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-connected {
+            background: #10b981;
+        }
+        
+        .status-disconnected {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        .status-connecting {
+            background: #f59e0b;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         .grid {
@@ -82,7 +117,7 @@
         }
         
         .metric-value {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 600;
             color: #f1f5f9;
         }
@@ -213,6 +248,33 @@
             margin-top: 24px;
         }
         
+        .candle-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+        
+        .candle-stat {
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .candle-stat-label {
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+        
+        .candle-stat-value {
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
         @media (max-width: 1024px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -231,17 +293,26 @@
             .indicators-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .header-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>SPCXUSD Signal Dashboard</h1>
+            <h1>SPCXUSD Live Trading Dashboard</h1>
             <div class="header-meta">
-                <div>SpaceX Perpetual Futures • Binance</div>
+                <div>Binance Perpetual Futures</div>
                 <div>1H Timeframe</div>
-                <div id="last-update">Last Updated: --:-- UTC</div>
+                <div id="connection-status" class="connection-status">
+                    <span class="status-dot status-connecting"></span>
+                    <span>Connecting...</span>
+                </div>
+                <div id="last-update">Last Update: --:-- UTC</div>
             </div>
         </div>
         
@@ -251,15 +322,34 @@
                 <div class="price-display">
                     <div class="metric">
                         <div class="metric-label">Current Price</div>
-                        <div class="metric-value" id="current-price">$163.29</div>
+                        <div class="metric-value" id="current-price">$0.00</div>
                         <div class="metric-change">
-                            <span id="price-change" class="positive">+2.45 (+1.53%)</span>
+                            <span id="price-change">+0.00 (+0.00%)</span>
                         </div>
                     </div>
                     <div class="metric">
                         <div class="metric-label">24h Range</div>
-                        <div class="metric-value" id="price-range">$159.40 - $168.50</div>
-                        <div class="metric-change" style="color: #94a3b8;">Range: $9.10</div>
+                        <div class="metric-value" id="price-range">$0.00 - $0.00</div>
+                        <div class="metric-change" style="color: #94a3b8;">Range: <span id="range-size">$0.00</span></div>
+                    </div>
+                </div>
+                
+                <div class="candle-info">
+                    <div class="candle-stat">
+                        <div class="candle-stat-label">Open</div>
+                        <div class="candle-stat-value" id="candle-open">$0.00</div>
+                    </div>
+                    <div class="candle-stat">
+                        <div class="candle-stat-label">High</div>
+                        <div class="candle-stat-value" id="candle-high">$0.00</div>
+                    </div>
+                    <div class="candle-stat">
+                        <div class="candle-stat-label">Low</div>
+                        <div class="candle-stat-value" id="candle-low">$0.00</div>
+                    </div>
+                    <div class="candle-stat">
+                        <div class="candle-stat-label">Volume</div>
+                        <div class="candle-stat-value" id="candle-volume">0</div>
                     </div>
                 </div>
             </div>
@@ -268,19 +358,19 @@
             <div class="card">
                 <div id="signal-box" class="signal-box signal-neutral">
                     <div class="signal-title">
-                        <span id="signal-text">NEUTRAL</span>
-                        <span id="signal-badge" class="signal-badge badge-neutral">HOLD</span>
+                        <span id="signal-text">LOADING</span>
+                        <span id="signal-badge" class="signal-badge badge-neutral">--</span>
                     </div>
                     <div style="font-size: 13px; color: #cbd5e1; line-height: 1.5;">
-                        <div id="signal-reason">Waiting for confirmation...</div>
+                        <div id="signal-reason">Connecting to Binance WebSocket...</div>
                     </div>
                 </div>
                 <div class="signal-strength">
                     <div class="strength-label">Signal Strength</div>
                     <div class="strength-bar">
-                        <div id="strength-fill" class="strength-fill" style="width: 50%;"></div>
+                        <div id="strength-fill" class="strength-fill" style="width: 0%;"></div>
                     </div>
-                    <div class="strength-text" id="strength-text">50%</div>
+                    <div class="strength-text" id="strength-text">0%</div>
                 </div>
             </div>
             
@@ -292,33 +382,33 @@
                 <div class="indicators-grid">
                     <div class="indicator">
                         <div class="indicator-name">EMA 12</div>
-                        <div class="indicator-value" id="ema12">$162.45</div>
-                        <div class="indicator-status positive">Above Price</div>
+                        <div class="indicator-value" id="ema12">$0.00</div>
+                        <div class="indicator-status" id="ema12-status">--</div>
                     </div>
                     <div class="indicator">
                         <div class="indicator-name">EMA 26</div>
-                        <div class="indicator-value" id="ema26">$161.80</div>
-                        <div class="indicator-status positive">Bullish Cross</div>
+                        <div class="indicator-value" id="ema26">$0.00</div>
+                        <div class="indicator-status" id="ema26-status">--</div>
                     </div>
                     <div class="indicator">
                         <div class="indicator-name">RSI (14)</div>
-                        <div class="indicator-value" id="rsi">58.4</div>
-                        <div class="indicator-status">Neutral Zone</div>
+                        <div class="indicator-value" id="rsi">0.0</div>
+                        <div class="indicator-status" id="rsi-status">--</div>
                     </div>
                     <div class="indicator">
                         <div class="indicator-name">MACD</div>
-                        <div class="indicator-value" id="macd">+0.65</div>
-                        <div class="indicator-status positive">Positive</div>
+                        <div class="indicator-value" id="macd">0.00</div>
+                        <div class="indicator-status" id="macd-status">--</div>
                     </div>
                     <div class="indicator">
                         <div class="indicator-name">ATR (14)</div>
-                        <div class="indicator-value" id="atr">$2.34</div>
-                        <div class="indicator-status">Volatility Measure</div>
+                        <div class="indicator-value" id="atr">$0.00</div>
+                        <div class="indicator-status">Volatility</div>
                     </div>
                     <div class="indicator">
-                        <div class="indicator-name">Stoch RSI</div>
-                        <div class="indicator-value" id="stoch-rsi">62.5%</div>
-                        <div class="indicator-status">Bullish</div>
+                        <div class="indicator-name">MACD Signal</div>
+                        <div class="indicator-value" id="macd-signal">0.00</div>
+                        <div class="indicator-status" id="signal-cross-status">--</div>
                     </div>
                 </div>
             </div>
@@ -333,237 +423,377 @@
         </div>
         
         <div class="footer">
-            Demo data • Connect to Deriv WebSocket API for live trading signals
+            Live data from Binance Perpetual Futures WebSocket API
         </div>
     </div>
 
     <script>
-        let chart = null;
-        
-        // Initialize demo data
-        function initDashboard() {
-            const candles = generateCandleData(50);
-            const ema12 = calculateEMA(candles, 12);
-            const ema26 = calculateEMA(candles, 26);
-            const rsi = calculateRSI(candles, 14);
-            const atr = calculateATR(candles, 14);
+        class BinanceTrader {
+            constructor() {
+                this.ws = null;
+                this.candles = [];
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 10;
+                this.reconnectDelay = 1000;
+                this.chart = null;
+            }
             
-            updateMetrics(candles, ema12, ema26, rsi, atr);
-            renderChart(candles, ema12, ema26);
-            generateSignal(candles, ema12, ema26, rsi, atr);
-            
-            setInterval(() => {
-                const newCandles = generateCandleData(50);
-                const newEMA12 = calculateEMA(newCandles, 12);
-                const newEMA26 = calculateEMA(newCandles, 26);
-                const newRSI = calculateRSI(newCandles, 14);
-                const newATR = calculateATR(newCandles, 14);
+            connect() {
+                const wsUrl = 'wss://fstream.binance.com/ws/spcxusd@klines_1h';
                 
-                updateMetrics(newCandles, newEMA12, newEMA26, newRSI, newATR);
-                renderChart(newCandles, newEMA12, newEMA26);
-                generateSignal(newCandles, newEMA12, newEMA26, newRSI, newATR);
-            }, 5000);
-        }
-        
-        function generateCandleData(count) {
-            const candles = [];
-            let price = 163.29;
+                try {
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        console.log('Connected to Binance WebSocket');
+                        this.setConnectionStatus('connected', 'Connected');
+                        this.reconnectAttempts = 0;
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        this.handleMessage(JSON.parse(event.data));
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.setConnectionStatus('disconnected', 'Connection Error');
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('Disconnected from Binance WebSocket');
+                        this.setConnectionStatus('disconnected', 'Disconnected');
+                        this.reconnect();
+                    };
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    this.reconnect();
+                }
+            }
             
-            for (let i = 0; i < count; i++) {
-                const volatility = (Math.random() - 0.5) * 2;
-                const open = price;
-                price += volatility;
-                const close = price;
-                const high = Math.max(open, close) + Math.abs(volatility * 0.5);
-                const low = Math.min(open, close) - Math.abs(volatility * 0.5);
+            reconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000);
+                    console.log(`Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
+                    this.setConnectionStatus('connecting', `Reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+                    
+                    setTimeout(() => this.connect(), this.reconnectDelay);
+                } else {
+                    console.error('Max reconnection attempts reached');
+                    this.setConnectionStatus('disconnected', 'Connection Failed');
+                }
+            }
+            
+            handleMessage(data) {
+                const kline = data.k;
+                const candle = {
+                    time: kline.t,
+                    open: parseFloat(kline.o),
+                    high: parseFloat(kline.h),
+                    low: parseFloat(kline.l),
+                    close: parseFloat(kline.c),
+                    volume: parseFloat(kline.v),
+                    isClosed: kline.x
+                };
                 
-                candles.push({ open, high, low, close });
-            }
-            
-            return candles;
-        }
-        
-        function calculateEMA(candles, period) {
-            const multiplier = 2 / (period + 1);
-            let ema = candles[0].close;
-            const emas = [ema];
-            
-            for (let i = 1; i < candles.length; i++) {
-                ema = (candles[i].close - ema) * multiplier + ema;
-                emas.push(ema);
-            }
-            
-            return emas;
-        }
-        
-        function calculateRSI(candles, period) {
-            let gains = 0, losses = 0;
-            
-            for (let i = 1; i < period; i++) {
-                const change = candles[i].close - candles[i - 1].close;
-                if (change > 0) gains += change;
-                else losses += Math.abs(change);
-            }
-            
-            let avgGain = gains / period;
-            let avgLoss = losses / period;
-            let rsis = [];
-            
-            for (let i = period; i < candles.length; i++) {
-                const change = candles[i].close - candles[i - 1].close;
-                avgGain = (avgGain * (period - 1) + (change > 0 ? change : 0)) / period;
-                avgLoss = (avgLoss * (period - 1) + (change < 0 ? Math.abs(change) : 0)) / period;
-                
-                const rs = avgGain / avgLoss;
-                const rsi = 100 - (100 / (1 + rs));
-                rsis.push(rsi);
-            }
-            
-            return rsis[rsis.length - 1] || 50;
-        }
-        
-        function calculateATR(candles, period) {
-            let tr = 0;
-            
-            for (let i = 1; i < candles.length; i++) {
-                const h = candles[i].high;
-                const l = candles[i].low;
-                const pc = candles[i - 1].close;
-                const tr_val = Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
-                tr += tr_val;
-            }
-            
-            return tr / (candles.length - 1);
-        }
-        
-        function updateMetrics(candles, ema12, ema26, rsi, atr) {
-            const current = candles[candles.length - 1].close;
-            const prev = candles[0].close;
-            const change = current - prev;
-            const pctChange = (change / prev) * 100;
-            
-            document.getElementById('current-price').textContent = `$${current.toFixed(2)}`;
-            document.getElementById('price-change').textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)} (${pctChange.toFixed(2)}%)`;
-            document.getElementById('price-change').className = change > 0 ? 'positive' : 'negative';
-            
-            document.getElementById('ema12').textContent = `$${ema12[ema12.length - 1].toFixed(2)}`;
-            document.getElementById('ema26').textContent = `$${ema26[ema26.length - 1].toFixed(2)}`;
-            document.getElementById('rsi').textContent = rsi.toFixed(1);
-            document.getElementById('atr').textContent = `$${atr.toFixed(2)}`;
-            
-            document.getElementById('last-update').textContent = `Last Updated: ${new Date().toLocaleTimeString('en-US', { hour12: false })} UTC`;
-        }
-        
-        function renderChart(candles, ema12, ema26) {
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            
-            if (chart) chart.destroy();
-            
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: candles.map((_, i) => i),
-                    datasets: [
-                        {
-                            label: 'Price',
-                            data: candles.map(c => c.close),
-                            borderColor: '#06b6d4',
-                            backgroundColor: 'rgba(6, 182, 212, 0.05)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 6
-                        },
-                        {
-                            label: 'EMA 12',
-                            data: ema12,
-                            borderColor: '#10b981',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 0
-                        },
-                        {
-                            label: 'EMA 26',
-                            data: ema26,
-                            borderColor: '#f59e0b',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#94a3b8', font: { size: 12 } }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: { color: '#64748b', font: { size: 11 } },
-                            grid: { color: 'rgba(51, 65, 85, 0.3)' }
-                        },
-                        x: {
-                            ticks: { color: '#64748b' },
-                            grid: { display: false }
-                        }
+                if (this.candles.length > 0 && this.candles[this.candles.length - 1].time === candle.time) {
+                    this.candles[this.candles.length - 1] = candle;
+                } else if (candle.isClosed) {
+                    this.candles.push(candle);
+                    if (this.candles.length > 100) {
+                        this.candles.shift();
                     }
                 }
-            });
-        }
-        
-        function generateSignal(candles, ema12, ema26, rsi, atr) {
-            const price = candles[candles.length - 1].close;
-            const bullish = ema12[ema12.length - 1] > ema26[ema26.length - 1];
-            const rsiSignal = rsi > 50;
-            const priceAboveEMA = price > ema12[ema12.length - 1];
-            
-            let signal = 'NEUTRAL';
-            let badge = 'HOLD';
-            let reason = 'No clear signal';
-            let strength = 50;
-            
-            if (bullish && rsiSignal && priceAboveEMA) {
-                signal = 'BUY';
-                badge = 'BUY';
-                reason = '✓ EMA Bullish Cross • ✓ RSI Positive • ✓ Price Above EMA';
-                strength = 85;
-            } else if (!bullish && !rsiSignal && price < ema12[ema12.length - 1]) {
-                signal = 'SELL';
-                badge = 'SELL';
-                reason = '✓ EMA Bearish Cross • ✓ RSI Negative • ✓ Price Below EMA';
-                strength = 85;
-            } else if (bullish && rsiSignal) {
-                signal = 'BUY';
-                badge = 'BUY';
-                reason = 'EMA Bullish • RSI Positive • Waiting for confirmation';
-                strength = 65;
-            } else if (!bullish && !rsiSignal) {
-                signal = 'SELL';
-                badge = 'SELL';
-                reason = 'EMA Bearish • RSI Negative • Watch for breakdown';
-                strength = 65;
+                
+                if (this.candles.length >= 26) {
+                    this.update();
+                }
             }
             
-            const signalBox = document.getElementById('signal-box');
-            signalBox.className = `signal-box signal-${signal.toLowerCase()}`;
-            document.getElementById('signal-text').textContent = signal;
+            update() {
+                const ema12 = this.calculateEMA(12);
+                const ema26 = this.calculateEMA(26);
+                const rsi = this.calculateRSI(14);
+                const atr = this.calculateATR(14);
+                const macd = this.calculateMACD();
+                
+                this.updateMetrics(ema12, ema26, rsi, atr, macd);
+                this.renderChart(ema12, ema26);
+                this.generateSignal(ema12, ema26, rsi, atr, macd);
+                
+                document.getElementById('last-update').textContent = `Last Update: ${new Date().toLocaleTimeString('en-US', { hour12: false })} UTC`;
+            }
             
-            const badgeEl = document.getElementById('signal-badge');
-            badgeEl.className = `signal-badge badge-${signal.toLowerCase()}`;
-            badgeEl.textContent = badge;
+            calculateEMA(period) {
+                const multiplier = 2 / (period + 1);
+                let ema = this.candles[0].close;
+                const emas = [ema];
+                
+                for (let i = 1; i < this.candles.length; i++) {
+                    ema = (this.candles[i].close - ema) * multiplier + ema;
+                    emas.push(ema);
+                }
+                
+                return emas[emas.length - 1];
+            }
             
-            document.getElementById('signal-reason').textContent = reason;
-            document.getElementById('strength-fill').style.width = `${strength}%`;
-            document.getElementById('strength-text').textContent = `${strength}% Confidence`;
+            calculateRSI(period) {
+                let gains = 0, losses = 0;
+                
+                for (let i = 1; i < period && i < this.candles.length; i++) {
+                    const change = this.candles[i].close - this.candles[i - 1].close;
+                    if (change > 0) gains += change;
+                    else losses += Math.abs(change);
+                }
+                
+                let avgGain = gains / period;
+                let avgLoss = losses / period;
+                
+                for (let i = period; i < this.candles.length; i++) {
+                    const change = this.candles[i].close - this.candles[i - 1].close;
+                    avgGain = (avgGain * (period - 1) + (change > 0 ? change : 0)) / period;
+                    avgLoss = (avgLoss * (period - 1) + (change < 0 ? Math.abs(change) : 0)) / period;
+                }
+                
+                const rs = avgGain / avgLoss;
+                return 100 - (100 / (1 + rs));
+            }
+            
+            calculateATR(period) {
+                let tr = 0;
+                
+                for (let i = 1; i < this.candles.length; i++) {
+                    const h = this.candles[i].high;
+                    const l = this.candles[i].low;
+                    const pc = this.candles[i - 1].close;
+                    const tr_val = Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+                    tr += tr_val;
+                }
+                
+                return tr / (this.candles.length - 1);
+            }
+            
+            calculateMACD() {
+                const ema12 = this.calculateEMA(12);
+                const ema26 = this.calculateEMA(26);
+                const macdLine = ema12 - ema26;
+                
+                const emaCandles = this.candles.map((_, i) => {
+                    let e12 = this.candles[0].close;
+                    for (let j = 1; j <= i; j++) {
+                        e12 = (this.candles[j].close - e12) * (2/13) + e12;
+                    }
+                    let e26 = this.candles[0].close;
+                    for (let j = 1; j <= i; j++) {
+                        e26 = (this.candles[j].close - e26) * (2/27) + e26;
+                    }
+                    return e12 - e26;
+                });
+                
+                let signalLine = emaCandles[0];
+                for (let i = 1; i < emaCandles.length; i++) {
+                    signalLine = (emaCandles[i] - signalLine) * (2/10) + signalLine;
+                }
+                
+                return {
+                    macd: macdLine,
+                    signal: signalLine,
+                    histogram: macdLine - signalLine
+                };
+            }
+            
+            updateMetrics(ema12, ema26, rsi, atr, macd) {
+                const current = this.candles[this.candles.length - 1].close;
+                const prev = this.candles[0].close;
+                const change = current - prev;
+                const pctChange = (change / prev) * 100;
+                
+                document.getElementById('current-price').textContent = `$${current.toFixed(2)}`;
+                document.getElementById('price-change').textContent = `${change > 0 ? '+' : ''}${change.toFixed(2)} (${pctChange.toFixed(2)}%)`;
+                document.getElementById('price-change').className = change > 0 ? 'positive' : 'negative';
+                
+                const high = Math.max(...this.candles.map(c => c.high));
+                const low = Math.min(...this.candles.map(c => c.low));
+                document.getElementById('price-range').textContent = `$${low.toFixed(2)} - $${high.toFixed(2)}`;
+                document.getElementById('range-size').textContent = `$${(high - low).toFixed(2)}`;
+                
+                document.getElementById('candle-open').textContent = `$${this.candles[this.candles.length - 1].open.toFixed(2)}`;
+                document.getElementById('candle-high').textContent = `$${this.candles[this.candles.length - 1].high.toFixed(2)}`;
+                document.getElementById('candle-low').textContent = `$${this.candles[this.candles.length - 1].low.toFixed(2)}`;
+                document.getElementById('candle-volume').textContent = this.candles[this.candles.length - 1].volume.toFixed(0);
+                
+                document.getElementById('ema12').textContent = `$${ema12.toFixed(2)}`;
+                document.getElementById('ema26').textContent = `$${ema26.toFixed(2)}`;
+                document.getElementById('ema12-status').textContent = current > ema12 ? 'Price Above' : 'Price Below';
+                document.getElementById('ema12-status').className = current > ema12 ? 'positive' : 'negative';
+                
+                document.getElementById('rsi').textContent = rsi.toFixed(1);
+                if (rsi > 70) document.getElementById('rsi-status').textContent = 'Overbought';
+                else if (rsi < 30) document.getElementById('rsi-status').textContent = 'Oversold';
+                else if (rsi > 50) document.getElementById('rsi-status').textContent = 'Bullish';
+                else document.getElementById('rsi-status').textContent = 'Bearish';
+                
+                document.getElementById('atr').textContent = `$${atr.toFixed(2)}`;
+                
+                document.getElementById('macd').textContent = macd.macd.toFixed(2);
+                document.getElementById('macd-signal').textContent = macd.signal.toFixed(2);
+                document.getElementById('macd-status').textContent = macd.macd > macd.signal ? 'Bullish' : 'Bearish';
+                document.getElementById('macd-status').className = macd.macd > macd.signal ? 'positive' : 'negative';
+                
+                document.getElementById('signal-cross-status').textContent = macd.histogram > 0 ? 'Histogram +' : 'Histogram -';
+            }
+            
+            renderChart(ema12, ema26) {
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                
+                if (this.chart) this.chart.destroy();
+                
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: this.candles.map((_, i) => i),
+                        datasets: [
+                            {
+                                label: 'Price',
+                                data: this.candles.map(c => c.close),
+                                borderColor: '#06b6d4',
+                                backgroundColor: 'rgba(6, 182, 212, 0.05)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'EMA 12',
+                                data: this.candles.map((_, i) => {
+                                    let ema = this.candles[0].close;
+                                    for (let j = 1; j <= i; j++) {
+                                        ema = (this.candles[j].close - ema) * (2/13) + ema;
+                                    }
+                                    return ema;
+                                }),
+                                borderColor: '#10b981',
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.4,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'EMA 26',
+                                data: this.candles.map((_, i) => {
+                                    let ema = this.candles[0].close;
+                                    for (let j = 1; j <= i; j++) {
+                                        ema = (this.candles[j].close - ema) * (2/27) + ema;
+                                    }
+                                    return ema;
+                                }),
+                                borderColor: '#f59e0b',
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.4,
+                                pointRadius: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#94a3b8', font: { size: 12 } }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: '#64748b', font: { size: 11 } },
+                                grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                            },
+                            x: {
+                                ticks: { color: '#64748b' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            generateSignal(ema12, ema26, rsi, atr, macd) {
+                const price = this.candles[this.candles.length - 1].close;
+                const bullishEMA = ema12 > ema26;
+                const bullishRSI = rsi > 50;
+                const bullishPrice = price > ema12;
+                const bullishMACD = macd.macd > macd.signal && macd.histogram > 0;
+                
+                let signal = 'NEUTRAL';
+                let badge = 'HOLD';
+                let reason = 'No clear signal';
+                let strength = 0;
+                
+                const bullishSignals = [bullishEMA, bullishRSI, bullishPrice, bullishMACD].filter(Boolean).length;
+                const bearishSignals = 4 - bullishSignals;
+                
+                if (bullishSignals === 4) {
+                    signal = 'BUY';
+                    badge = 'BUY';
+                    reason = '✓ EMA Bullish Cross • ✓ RSI Positive • ✓ Price Above EMA • ✓ MACD Bullish';
+                    strength = 100;
+                } else if (bearishSignals === 4) {
+                    signal = 'SELL';
+                    badge = 'SELL';
+                    reason = '✓ EMA Bearish Cross • ✓ RSI Negative • ✓ Price Below EMA • ✓ MACD Bearish';
+                    strength = 100;
+                } else if (bullishSignals === 3) {
+                    signal = 'BUY';
+                    badge = 'BUY';
+                    reason = `Strong bullish setup (${bullishSignals}/4 signals aligned)`;
+                    strength = 85;
+                } else if (bearishSignals === 3) {
+                    signal = 'SELL';
+                    badge = 'SELL';
+                    reason = `Strong bearish setup (${bearishSignals}/4 signals aligned)`;
+                    strength = 85;
+                } else if (bullishSignals > bearishSignals) {
+                    signal = 'BUY';
+                    badge = 'BUY';
+                    reason = `Bullish bias (${bullishSignals}/4 signals) • Watch for confirmation`;
+                    strength = 60;
+                } else if (bearishSignals > bullishSignals) {
+                    signal = 'SELL';
+                    badge = 'SELL';
+                    reason = `Bearish bias (${bearishSignals}/4 signals) • Watch for breakdown`;
+                    strength = 60;
+                } else {
+                    signal = 'NEUTRAL';
+                    badge = 'HOLD';
+                    reason = 'Mixed signals • Wait for clearer setup';
+                    strength = 40;
+                }
+                
+                const signalBox = document.getElementById('signal-box');
+                signalBox.className = `signal-box signal-${signal.toLowerCase()}`;
+                document.getElementById('signal-text').textContent = signal;
+                
+                const badgeEl = document.getElementById('signal-badge');
+                badgeEl.className = `signal-badge badge-${signal.toLowerCase()}`;
+                badgeEl.textContent = badge;
+                
+                document.getElementById('signal-reason').textContent = reason;
+                document.getElementById('strength-fill').style.width = `${strength}%`;
+                document.getElementById('strength-text').textContent = `${strength}% Confidence`;
+            }
+            
+            setConnectionStatus(status, text) {
+                const el = document.getElementById('connection-status');
+                const dot = el.querySelector('.status-dot');
+                
+                dot.className = `status-dot status-${status}`;
+                el.querySelector('span:last-child').textContent = text;
+            }
         }
         
-        initDashboard();
+        const trader = new BinanceTrader();
+        trader.connect();
     </script>
 </body>
 </html>
