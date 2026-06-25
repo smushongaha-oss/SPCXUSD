@@ -1,134 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOCUS AUTO TRADERS · SPX500 · H1 + H4 · Groq AI</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --bg:#060a10;--panel:#090d1c;--border:#14223a;
-    --green:#00e5b0;--red:#ff2d55;--gold:#f5c518;--blue:#3d9bff;--purple:#aa44ff;
-    --spx:#ff6b35;
-    --text:#d8eaff;--dim:#3d5a7a;
-    --h1-accent:#3d9bff;--h4-accent:#aa44ff;
-    --glow-green:0 0 14px #00e5b0bb;--glow-red:0 0 14px #ff2d55bb;
-    --glow-gold:0 0 14px #f5c518bb;--glow-blue:0 0 14px #3d9bffbb;
-    --glow-purple:0 0 14px #aa44ffbb;--glow-spx:0 0 18px #ff6b35cc;
-    --glow-h1:0 0 14px #3d9bffbb;--glow-h4:0 0 14px #aa44ffbb;
-  }
-  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;background-image:radial-gradient(ellipse at 50% 0%,#ff6b3506 0%,transparent 65%)}
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>FOCUS AUTO TRADERS · SPCXUSD · H1 + H4 · Groq AI</title> 
+<style> 
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap'); 
+*{margin:0;padding:0;box-sizing:border-box} 
+:root{ 
+ --bg:#060a10;--panel:#090d1c;--border:#14223a; 
+ --green:#00e5b0;--red:#ff2d55;--gold:#f5c518;--blue:#3d9bff;--purple:#aa44ff; 
+ --spcx:#ff6b35; 
+ --text:#d8eaff;--dim:#3d5a7a; 
+ --h1-accent:#3d9bff;--h4-accent:#aa44ff; 
+ --glow-green:0 0 14px #00e5b0bb;--glow-red:0 0 14px #ff2d55bb; 
+ --glow-gold:0 0 14px #f5c518bb;--glow-blue:0 0 14px #3d9bffbb; 
+ --glow-purple:0 0 14px #aa44ffbb;--glow-spcx:0 0 18px #ff6b35cc; 
+ --glow-h1:0 0 14px #3d9bffbb;--glow-h4:0 0 14px #aa44ffbb; 
+} 
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;background-image:radial-gradient(ellipse at 50% 0%,#ff6b3506 0%,transparent 65%)} 
+/* ── HEADER ── */ 
+.brand-badge{display:flex;align-items:center;gap:10px;margin-bottom:4px} 
+.brand-shield{width:32px;height:32px;background:var(--spcx);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-spcx);flex-shrink:0;font-family:'Orbitron',sans-serif;font-weight:900;color:#000;font-size:0.9rem} 
+.top-label{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.45em;color:var(--dim)} 
+.buy-sell-title{display:flex;gap:14px;align-items:center;font-family:'Orbitron',sans-serif;font-size:clamp(2.4rem,8vw,4.2rem);font-weight:900;line-height:1;margin-bottom:5px} 
+.buy-sell-title .buy{color:var(--green);text-shadow:var(--glow-green)} 
+.buy-sell-title .div{color:var(--dim);font-size:2rem} 
+.buy-sell-title .sell{color:var(--red);text-shadow:var(--glow-red)} 
+.sub-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--spcx);letter-spacing:.2em;margin-bottom:10px;text-shadow:var(--glow-spcx)} 
+/* TF pill badges */ 
+.tf-pills{display:flex;gap:8px;margin-bottom:10px} 
+.tf-pill{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:.08em} 
+.tf-pill.h1{background:#0a1830;border:1px solid var(--h1-accent);color:var(--h1-accent);box-shadow:var(--glow-h1)} 
+.tf-pill.h4{background:#160a2e;border:1px solid var(--h4-accent);color:var(--h4-accent);box-shadow:var(--glow-h4)} 
+.tf-pill.conf{background:#0d1a0a;border:1px solid var(--green);color:var(--green);box-shadow:var(--glow-green)} 
+/* ── STATUS BAR ── */ 
+.conn-status{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 14px;border-radius:20px;margin-bottom:10px;display:flex;align-items:center;gap:6px;border:1px solid var(--border)} 
+.conn-status.connecting{color:var(--gold);border-color:var(--gold)} 
+.conn-status.connected{color:var(--green);border-color:var(--green)} 
+.conn-status.error{color:var(--red);border-color:var(--red)} 
+.conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.4s infinite} 
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} 
+/* ── SIGNAL ALERT ── */ 
+.signal-alert{display:none;width:100%;max-width:980px;padding:12px 20px;border-radius:10px;margin-bottom:12px;font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;text-align:center;letter-spacing:.1em;animation:flashPulse 1s ease-in-out 3} 
+.signal-alert.buy{background:#00e5b015;border:2px solid var(--green);color:var(--green)} 
+.signal-alert.sell{background:#ff2d5515;border:2px solid var(--red);color:var(--red)} 
+@keyframes flashPulse{0%,100%{opacity:1}50%{opacity:.3}} 
+/* ── GROQ KEY BAR ── */ 
+.key-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap} 
+.key-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap} 
+.key-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:6px 10px;outline:none;flex:1;min-width:200px;transition:border-color .2s} 
+.key-inp:focus{border-color:var(--spcx)} 
+.key-btn{background:var(--spcx);color:#000;border:none;border-radius:5px;padding:6px 16px;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap} 
+.key-btn:hover{opacity:.85} 
+.key-hint{font-size:.62rem;color:var(--dim);width:100%} 
+.key-hint a{color:var(--spcx);text-decoration:none} 
+/* ── CONFLUENCE BANNER ── */ 
+.conf-banner{width:100%;max-width:980px;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;border:1px solid var(--border);background:var(--panel)} 
+.conf-title{font-family:'Orbitron',sans-serif;font-size:.68rem;color:var(--dim);letter-spacing:.12em;white-space:nowrap} 
+.conf-sig{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;min-width:90px} 
+.conf-sig.buy{color:var(--green);text-shadow:var(--glow-green)} 
+.conf-sig.sell{color:var(--red);text-shadow:var(--glow-red)} 
+.conf-sig.wait{color:var(--spcx);text-shadow:var(--glow-spcx)} 
+.conf-detail{display:flex;flex-direction:column;gap:3px;flex:1} 
+.conf-row{display:flex;gap:14px;flex-wrap:wrap} 
+.conf-item{display:flex;flex-direction:column;gap:1px} 
+.conf-lbl{font-size:.58rem;color:var(--dim);letter-spacing:.1em} 
+.conf-val{font-family:'Share Tech Mono',monospace;font-size:.88rem} 
+.conf-val.green{color:var(--green)}.conf-val.red{color:var(--red)}.conf-val.spcx{color:var(--spcx)} 
+.str-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-left:auto} 
+.str-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.1em} 
+.str-row{display:flex;align-items:center;gap:8px} 
+.str-bg{width:120px;height:7px;background:#14223a;border-radius:4px} 
+.str-bar{height:100%;border-radius:4px;background:var(--spcx);box-shadow:var(--glow-spcx);transition:width .6s} 
+.str-pct{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--spcx);min-width:40px;text-align:right} 
+/* ── DUAL PANEL ── */ 
+.dual-grid{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px} 
+.tf-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:280px} 
+.tf-panel.h1-panel{border-color:#1a2e4a} 
+.tf-panel.h4-panel{border-color:#221040} 
+.tp-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)} 
+.tp-header.h1{background:#0a1222;border-bottom-color:#1a2e4a} 
+.tp-header.h4{background:#0f0820;border-bottom-color:#221040} 
+.tp-dot{width:8px;height:8px;border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0} 
+.tp-dot.h1{background:var(--h1-accent);box-shadow:var(--glow-h1)} 
+.tp-dot.h4{background:var(--h4-accent);box-shadow:var(--glow-h4)} 
+.tp-sym{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700} 
+.tp-sym.h1{color:var(--h1-accent)} 
+.tp-sym.h4{color:var(--h4-accent)} 
+.tp-sig{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:900;margin-left:auto} 
+.tp-sig.buy{color:var(--green);text-shadow:var(--glow-green)} 
+.tp-sig.sell{color:var(--red);text-shadow:var(--glow-red)} 
+.tp-sig.wait{color:var(--dim)} 
+.tp-body{padding:12px;font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.6;color:var(--text);white-space:pre-wrap;min-height:200px} 
+/* ── TRADE LEVELS ── */ 
+.levels-strip{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px} 
+.ls-div{background:var(--border)} 
+.ls-cell{padding:14px 16px;display:flex;align-items:center;gap:12px} 
+.ls-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0} 
+.ls-icon.green{border:2px solid var(--green);color:var(--green);box-shadow:var(--glow-green)} 
+.ls-icon.red{border:2px solid var(--red);color:var(--red);box-shadow:var(--glow-red)} 
+.ls-icon.spcx{border:2px solid var(--spcx);color:var(--spcx);box-shadow:var(--glow-spcx)} 
+.ls-txt .bl{font-size:.56rem;letter-spacing:.15em;color:var(--dim)} 
+.ls-txt .bv{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700} 
+.ls-txt .bv.green{color:var(--green);text-shadow:var(--glow-green)} 
+.ls-txt .bv.red{color:var(--red);text-shadow:var(--glow-red)} 
+.ls-txt .bv.spcx{color:var(--spcx);text-shadow:var(--glow-spcx)} 
+.ls-sub{font-size:.6rem;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px} 
+/* ── GROQ AI SECTION ── */ 
+.ai-section{width:100%;max-width:980px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden} 
+.ai-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);background:#090c1e} 
+.ai-hdr-title{font-family:'Orbitron',sans-serif;font-size:.78rem;color:var(--spcx);letter-spacing:.08em} 
+.ai-hdr-model{font-size:.68rem;color:var(--dim);margin-left:auto;font-family:'Share Tech Mono',monospace} 
+.ai-inputs{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap} 
+.ai-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:8px 12px;outline:none;transition:border-color .2s} 
+.ai-inp:focus{border-color:var(--spcx)} 
+.ai-key{width:280px} 
+.ai-btn{background:var(--spcx);color:#000;border:none;border-radius:5px;padding:8px 18px;font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer} 
+.ai-output{padding:14px;font-family:'Share Tech Mono',monospace;font-size:.8rem;line-height:1.5;min-height:120px;color:var(--text)} 
+</style> 
+</head> 
+<body> 
 
-  /* ── HEADER ── */
-  .brand-badge{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-  .brand-shield{width:32px;height:32px;background:var(--spx);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-spx);flex-shrink:0;font-family:'Orbitron',sans-serif;font-weight:900;color:#000;font-size:0.9rem}
-  .top-label{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.45em;color:var(--dim)}
-  .buy-sell-title{display:flex;gap:14px;align-items:center;font-family:'Orbitron',sans-serif;font-size:clamp(2.4rem,8vw,4.2rem);font-weight:900;line-height:1;margin-bottom:5px}
-  .buy-sell-title .buy{color:var(--green);text-shadow:var(--glow-green)}
-  .buy-sell-title .div{color:var(--dim);font-size:2rem}
-  .buy-sell-title .sell{color:var(--red);text-shadow:var(--glow-red)}
-  .sub-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--spx);letter-spacing:.2em;margin-bottom:10px;text-shadow:var(--glow-spx)}
+<div class="brand-badge">
+ <div class="brand-shield">SP</div>
+ <div class="top-label">FOCUS AUTO TRADERS</div>
+</div>
 
-  /* TF pill badges */
-  .tf-pills{display:flex;gap:8px;margin-bottom:10px}
-  .tf-pill{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:.08em}
-  .tf-pill.h1{background:#0a1830;border:1px solid var(--h1-accent);color:var(--h1-accent);box-shadow:var(--glow-h1)}
-  .tf-pill.h4{background:#160a2e;border:1px solid var(--h4-accent);color:var(--h4-accent);box-shadow:var(--glow-h4)}
-  .tf-pill.conf{background:#0d1a0a;border:1px solid var(--green);color:var(--green);box-shadow:var(--glow-green)}
-
-  /* ── STATUS BAR ── */
-  .conn-status{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 14px;border-radius:20px;margin-bottom:10px;display:flex;align-items:center;gap:6px;border:1px solid var(--border)}
-  .conn-status.connecting{color:var(--gold);border-color:var(--gold)}
-  .conn-status.connected{color:var(--green);border-color:var(--green)}
-  .conn-status.error{color:var(--red);border-color:var(--red)}
-  .conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.4s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-
-  /* ── SIGNAL ALERT ── */
-  .signal-alert{display:none;width:100%;max-width:980px;padding:12px 20px;border-radius:10px;margin-bottom:12px;font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;text-align:center;letter-spacing:.1em;animation:flashPulse 1s ease-in-out 3}
-  .signal-alert.buy{background:#00e5b015;border:2px solid var(--green);color:var(--green)}
-  .signal-alert.sell{background:#ff2d5515;border:2px solid var(--red);color:var(--red)}
-  @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-  /* ── GROQ KEY BAR ── */
-  .key-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .key-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
-  .key-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:6px 10px;outline:none;flex:1;min-width:200px;transition:border-color .2s}
-  .key-inp:focus{border-color:var(--spx)}
-  .key-btn{background:var(--spx);color:#000;border:none;border-radius:5px;padding:6px 16px;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
-  .key-btn:hover{opacity:.85}
-  .key-hint{font-size:.62rem;color:var(--dim);width:100%}
-  .key-hint a{color:var(--spx);text-decoration:none}
-
-  /* ── CONFLUENCE BANNER ── */
-  .conf-banner{width:100%;max-width:980px;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;border:1px solid var(--border);background:var(--panel)}
-  .conf-title{font-family:'Orbitron',sans-serif;font-size:.68rem;color:var(--dim);letter-spacing:.12em;white-space:nowrap}
-  .conf-sig{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;min-width:90px}
-  .conf-sig.buy{color:var(--green);text-shadow:var(--glow-green)}
-  .conf-sig.sell{color:var(--red);text-shadow:var(--glow-red)}
-  .conf-sig.wait{color:var(--spx);text-shadow:var(--glow-spx)}
-  .conf-detail{display:flex;flex-direction:column;gap:3px;flex:1}
-  .conf-row{display:flex;gap:14px;flex-wrap:wrap}
-  .conf-item{display:flex;flex-direction:column;gap:1px}
-  .conf-lbl{font-size:.58rem;color:var(--dim);letter-spacing:.1em}
-  .conf-val{font-family:'Share Tech Mono',monospace;font-size:.88rem}
-  .conf-val.green{color:var(--green)}.conf-val.red{color:var(--red)}.conf-val.spx{color:var(--spx)}
-  .str-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-left:auto}
-  .str-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.1em}
-  .str-row{display:flex;align-items:center;gap:8px}
-  .str-bg{width:120px;height:7px;background:#14223a;border-radius:4px}
-  .str-bar{height:100%;border-radius:4px;background:var(--spx);box-shadow:var(--glow-spx);transition:width .6s}
-  .str-pct{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--spx);min-width:40px;text-align:right}
-
-  /* ── DUAL PANEL ── */
-  .dual-grid{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-  .tf-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:280px}
-  .tf-panel.h1-panel{border-color:#1a2e4a}
-  .tf-panel.h4-panel{border-color:#221040}
-  .tp-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)}
-  .tp-header.h1{background:#0a1222;border-bottom-color:#1a2e4a}
-  .tp-header.h4{background:#0f0820;border-bottom-color:#221040}
-  .tp-dot{width:8px;height:8px;border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0}
-  .tp-dot.h1{background:var(--h1-accent);box-shadow:var(--glow-h1)}
-  .tp-dot.h4{background:var(--h4-accent);box-shadow:var(--glow-h4)}
-  .tp-sym{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700}
-  .tp-sym.h1{color:var(--h1-accent)}
-  .tp-sym.h4{color:var(--h4-accent)}
-  .tp-sig{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:900;margin-left:auto}
-  .tp-sig.buy{color:var(--green);text-shadow:var(--glow-green)}
-  .tp-sig.sell{color:var(--red);text-shadow:var(--glow-red)}
-  .tp-sig.wait{color:var(--dim)}
-  .tp-body{padding:12px;font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.6;color:var(--text);white-space:pre-wrap;min-height:200px}
-
-  /* ── TICKER STRIP ── */
-  .ticker-strip{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:7px 16px;margin-bottom:10px;display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
-  .ticker-strip::-webkit-scrollbar{display:none}
-  .tk{display:flex;flex-direction:column;gap:2px;min-width:72px}
-  .tk-l{font-size:.58rem;color:var(--dim);letter-spacing:.08em}
-  .tk-v{font-family:'Share Tech Mono',monospace;font-size:.82rem}
-
-  /* ── TRADE LEVELS ── */
-  .levels-strip{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
-  .ls-div{background:var(--border)}
-  .ls-cell{padding:14px 16px;display:flex;align-items:center;gap:12px}
-  .ls-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
-  .ls-icon.green{border:2px solid var(--green);color:var(--green);box-shadow:var(--glow-green)}
-  .ls-icon.red{border:2px solid var(--red);color:var(--red);box-shadow:var(--glow-red)}
-  .ls-icon.spx{border:2px solid var(--spx);color:var(--spx);box-shadow:var(--glow-spx)}
-  .ls-txt .bl{font-size:.56rem;letter-spacing:.15em;color:var(--dim)}
-  .ls-txt .bv{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700}
-  .ls-txt .bv.green{color:var(--green);text-shadow:var(--glow-green)}
-  .ls-txt .bv.red{color:var(--red);text-shadow:var(--glow-red)}
-  .ls-txt .bv.spx{color:var(--spx);text-shadow:var(--glow-spx)}
-  .ls-sub{font-size:.6rem;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px}
-
-  /* ── GROQ AI SECTION ── */
-  .ai-section{width:100%;max-width:980px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-  .ai-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);background:#090c1e}
-  .ai-hdr-title{font-family:'Orbitron',sans-serif;font-size:.78rem;color:var(--spx);letter-spacing:.08em}
-  .ai-hdr-model{font-size:.68rem;color:var(--dim);margin-left:auto;font-family:'Share Tech Mono',monospace}
-  .ai-inputs{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-  .ai-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:8px 12px;outline:none;transition:border-color .2s}
-  .ai-inp:focus{border-color:var(--spx)}
-  .ai-key{width:
+<div class="buy-sell-title">
+ <span class="buy">BUY
