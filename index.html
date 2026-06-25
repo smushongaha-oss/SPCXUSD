@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPCXUSD Live Trading Dashboard</title>
+    <title>SPCXUSD H4 Live Trading Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
@@ -241,13 +241,6 @@
             margin-top: 4px;
         }
         
-        .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 24px;
-        }
-        
         .candle-info {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -273,6 +266,13 @@
             color: #f1f5f9;
             font-weight: 600;
             font-size: 14px;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 24px;
         }
         
         @media (max-width: 1024px) {
@@ -304,10 +304,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>SPCXUSD Live Trading Dashboard</h1>
+            <h1>SPCXUSD H4 Live Trading Dashboard</h1>
             <div class="header-meta">
                 <div>Binance Perpetual Futures</div>
-                <div>1H Timeframe</div>
+                <div>4H Timeframe</div>
                 <div id="connection-status" class="connection-status">
                     <span class="status-dot status-connecting"></span>
                     <span>Connecting...</span>
@@ -336,19 +336,19 @@
                 
                 <div class="candle-info">
                     <div class="candle-stat">
-                        <div class="candle-stat-label">Open</div>
+                        <div class="candle-stat-label">H4 Open</div>
                         <div class="candle-stat-value" id="candle-open">$0.00</div>
                     </div>
                     <div class="candle-stat">
-                        <div class="candle-stat-label">High</div>
+                        <div class="candle-stat-label">H4 High</div>
                         <div class="candle-stat-value" id="candle-high">$0.00</div>
                     </div>
                     <div class="candle-stat">
-                        <div class="candle-stat-label">Low</div>
+                        <div class="candle-stat-label">H4 Low</div>
                         <div class="candle-stat-value" id="candle-low">$0.00</div>
                     </div>
                     <div class="candle-stat">
-                        <div class="candle-stat-label">Volume</div>
+                        <div class="candle-stat-label">H4 Vol</div>
                         <div class="candle-stat-value" id="candle-volume">0</div>
                     </div>
                 </div>
@@ -377,7 +377,7 @@
             <!-- Technical Indicators -->
             <div class="card grid-full">
                 <div style="margin-bottom: 12px;">
-                    <h3 style="font-size: 16px; margin-bottom: 12px;">Technical Indicators</h3>
+                    <h3 style="font-size: 16px; margin-bottom: 12px;">Technical Indicators (H4)</h3>
                 </div>
                 <div class="indicators-grid">
                     <div class="indicator">
@@ -415,7 +415,7 @@
             
             <!-- Price Chart -->
             <div class="card grid-full">
-                <h3 style="font-size: 16px; margin-bottom: 16px;">Price Action & Moving Averages</h3>
+                <h3 style="font-size: 16px; margin-bottom: 16px;">H4 Price Action & Moving Averages</h3>
                 <div class="chart-container">
                     <canvas id="priceChart"></canvas>
                 </div>
@@ -423,7 +423,7 @@
         </div>
         
         <div class="footer">
-            Live data from Binance Perpetual Futures WebSocket API
+            Live data from Binance Perpetual Futures WebSocket API • H4 Timeframe
         </div>
     </div>
 
@@ -439,14 +439,14 @@
             }
             
             connect() {
-                const wsUrl = 'wss://fstream.binance.com/ws/spcxusd@klines_1h';
+                const wsUrl = 'wss://fstream.binance.com/ws/spcxusd@klines_4h';
                 
                 try {
                     this.ws = new WebSocket(wsUrl);
                     
                     this.ws.onopen = () => {
-                        console.log('Connected to Binance WebSocket');
-                        this.setConnectionStatus('connected', 'Connected');
+                        console.log('Connected to Binance H4 WebSocket');
+                        this.setConnectionStatus('connected', 'Connected - H4 Live');
                         this.reconnectAttempts = 0;
                     };
                     
@@ -617,10 +617,11 @@
                 document.getElementById('price-range').textContent = `$${low.toFixed(2)} - $${high.toFixed(2)}`;
                 document.getElementById('range-size').textContent = `$${(high - low).toFixed(2)}`;
                 
-                document.getElementById('candle-open').textContent = `$${this.candles[this.candles.length - 1].open.toFixed(2)}`;
-                document.getElementById('candle-high').textContent = `$${this.candles[this.candles.length - 1].high.toFixed(2)}`;
-                document.getElementById('candle-low').textContent = `$${this.candles[this.candles.length - 1].low.toFixed(2)}`;
-                document.getElementById('candle-volume').textContent = this.candles[this.candles.length - 1].volume.toFixed(0);
+                const currentCandle = this.candles[this.candles.length - 1];
+                document.getElementById('candle-open').textContent = `$${currentCandle.open.toFixed(2)}`;
+                document.getElementById('candle-high').textContent = `$${currentCandle.high.toFixed(2)}`;
+                document.getElementById('candle-low').textContent = `$${currentCandle.low.toFixed(2)}`;
+                document.getElementById('candle-volume').textContent = (currentCandle.volume / 1000000).toFixed(2) + 'M';
                 
                 document.getElementById('ema12').textContent = `$${ema12.toFixed(2)}`;
                 document.getElementById('ema26').textContent = `$${ema26.toFixed(2)}`;
@@ -635,8 +636,8 @@
                 
                 document.getElementById('atr').textContent = `$${atr.toFixed(2)}`;
                 
-                document.getElementById('macd').textContent = macd.macd.toFixed(2);
-                document.getElementById('macd-signal').textContent = macd.signal.toFixed(2);
+                document.getElementById('macd').textContent = macd.macd.toFixed(4);
+                document.getElementById('macd-signal').textContent = macd.signal.toFixed(4);
                 document.getElementById('macd-status').textContent = macd.macd > macd.signal ? 'Bullish' : 'Bearish';
                 document.getElementById('macd-status').className = macd.macd > macd.signal ? 'positive' : 'negative';
                 
@@ -651,7 +652,7 @@
                 this.chart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: this.candles.map((_, i) => i),
+                        labels: this.candles.map((_, i) => `H4-${i}`),
                         datasets: [
                             {
                                 label: 'Price',
