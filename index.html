@@ -55,8 +55,6 @@
   /* ── KEY BAR ── */
   .key-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .key-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
-  .key-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:6px 10px;outline:none;flex:1;min-width:200px;transition:border-color .2s}
-  .key-inp:focus{border-color:var(--spcx)}
   .key-btn{background:var(--spcx);color:#fff;border:none;border-radius:5px;padding:6px 16px;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
   .key-btn:hover{opacity:.85}
   .key-hint{font-size:.62rem;color:var(--dim);width:100%}
@@ -124,8 +122,8 @@
   .sv{font-family:'Share Tech Mono',monospace;font-size:.82rem}
   .sv.green{color:var(--green)}.sv.red{color:var(--red)}.sv.spcx{color:var(--spcx)}
   .sv.h1c{color:var(--h1-accent)}.sv.h4c{color:var(--h4-accent)}
-  .tp-chart{flex:1;min-height:200px;position:relative;display:flex;align-items:center;justify-content:center}
-  .tp-chart canvas{display:block;width:100%;height:100%}
+  .tp-chart{flex:1;min-height:200px;position:relative;background:var(--bg)}
+  .tp-chart canvas{width:100%;height:100%;display:block}
 
   /* ── TICKER STRIP ── */
   .ticker-strip{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:7px 16px;margin-bottom:10px;display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
@@ -198,17 +196,16 @@
 
 <div class="conn-status connecting" id="connStatus">
   <div class="conn-dot"></div>
-  <span id="connText">ENTER CRYPTO API KEY TO START</span>
+  <span id="connText">LOADING LIVE DATA...</span>
 </div>
 
 <div class="signal-alert" id="signalAlert"></div>
 
 <div class="key-bar">
-  <div class="key-label">COINGECKO API KEY:</div>
-  <input class="key-inp" id="apiKey" type="password" placeholder="Paste your CoinGecko API key...">
-  <button class="key-btn" onclick="startFeed()">▶ START H1 + H4 FEED</button>
+  <div class="key-label">STATUS:</div>
+  <button class="key-btn" onclick="startFeed()">▶ START LIVE FEED</button>
   <div class="key-hint">
-    H1 refreshes every 5 min · H4 refreshes every 15 min · SPCX/USD pair · <a href="https://www.coingecko.com/en/api" target="_blank">Get free API key</a>
+    Using CoinGecko API (free, no key needed) · H1 refreshes every 1 min · H4 refreshes every 4 min
   </div>
 </div>
 
@@ -218,12 +215,12 @@
   <div class="cd-block">
     <span class="cd-tf h1">H1</span>
     <div class="cd-track"><div class="cd-fill h1" id="cdFill1" style="width:100%"></div></div>
-    <span class="cd-val h1" id="cdVal1">5m</span>
+    <span class="cd-val h1" id="cdVal1">1m</span>
   </div>
   <div class="cd-block">
     <span class="cd-tf h4">H4</span>
     <div class="cd-track"><div class="cd-fill h4" id="cdFill4" style="width:100%"></div></div>
-    <span class="cd-val h4" id="cdVal4">15m</span>
+    <span class="cd-val h4" id="cdVal4">4m</span>
   </div>
 </div>
 
@@ -269,7 +266,7 @@
         <div class="sg"><div class="sl">TREND</div><div class="sv" id="h1trend">--</div></div>
         <div class="sg"><div class="sl">CANDLES</div><div class="sv h1c" id="h1count">--</div></div>
       </div>
-      <div class="tp-chart"><canvas id="chartH1" width="400" height="200"></canvas></div>
+      <div class="tp-chart" id="chart1"></div>
     </div>
   </div>
 
@@ -290,7 +287,7 @@
         <div class="sg"><div class="sl">TREND</div><div class="sv" id="h4trend">--</div></div>
         <div class="sg"><div class="sl">CANDLES</div><div class="sv h4c" id="h4count">--</div></div>
       </div>
-      <div class="tp-chart"><canvas id="chartH4" width="400" height="200"></canvas></div>
+      <div class="tp-chart" id="chart4"></div>
     </div>
   </div>
 
@@ -304,7 +301,7 @@
   <div class="tk"><div class="tk-l">H4 HIGH</div><div class="tk-v" style="color:var(--green)" id="tk-h4hi">--</div></div>
   <div class="tk"><div class="tk-l">H4 LOW</div><div class="tk-v" style="color:var(--red)" id="tk-h4lo">--</div></div>
   <div class="tk"><div class="tk-l">H1 CHANGE</div><div class="tk-v" id="tk-chg">--</div></div>
-  <div class="tk"><div class="tk-l">SOURCE</div><div class="tk-v" style="color:var(--spcx)">LIVE FEED</div></div>
+  <div class="tk"><div class="tk-l">SOURCE</div><div class="tk-v" style="color:var(--spcx)">COINGECKO API</div></div>
   <div class="tk"><div class="tk-l">STATUS</div><div class="tk-v" style="color:var(--spcx)" id="tk-status">OFFLINE</div></div>
 </div>
 
@@ -359,17 +356,17 @@
   <div class="ai-resp" id="aiResp">Ready for AI analysis. Enter Groq API key and click ANALYZE.</div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script>
 (function(){
 
   // ── CONFIG ──
-  const SYMBOL   = 'spcx';  // CoinGecko ID
+  const SYMBOL   = 'spcx';
   const VS_CURRENCY = 'usd';
-  const REFRESH_H1 = 60 * 1000;      // 1 minute (demo - adjust to 5 min for production)
-  const REFRESH_H4 = 4 * 60 * 1000;  // 4 minutes (demo - adjust to 15 min for production)
+  const REFRESH_H1 = 60 * 1000;      // 1 min
+  const REFRESH_H4 = 4 * 60 * 1000;  // 4 min
 
   // ── STATE ──
-  let apiKey      = '';
   let dataH1      = [];
   let dataH4      = [];
   let sigH1       = 'WAIT';
@@ -382,6 +379,8 @@
   let cd1Rem      = REFRESH_H1/1000;
   let cd4Rem      = REFRESH_H4/1000;
   let cdTimer     = null;
+  let chartH1     = null;
+  let chartH4     = null;
 
   // ── HELPERS ──
   const el  = id => document.getElementById(id);
@@ -444,31 +443,30 @@
     return (e12&&e26)?e12-e26:null;
   }
 
-  // ── FETCH COINGECKO DATA ──
-  async function fetchPriceData(days=90){
+  // ── FETCH COINGECKO ──
+  async function fetchPriceData(){
     try{
-      const url = `https://api.coingecko.com/api/v3/coins/${SYMBOL}/market_chart?vs_currency=${VS_CURRENCY}&days=${days}&interval=hourly`;
+      const url = `https://api.coingecko.com/api/v3/coins/${SYMBOL}/market_chart?vs_currency=${VS_CURRENCY}&days=30&interval=hourly`;
       const resp = await fetch(url);
       const data = await resp.json();
       
-      if(!data.prices || data.prices.length===0) throw new Error('No price data');
+      if(!data.prices || data.prices.length===0) throw new Error('No data');
       
-      // Convert to OHLC format (simulate from minute data)
       return data.prices.map((p,i)=>({
         timestamp: p[0],
-        open: p[1],
         close: p[1],
-        high: p[1] * 1.001,
-        low: p[1] * 0.999,
+        open: i===0 ? p[1] : data.prices[i-1][1],
+        high: p[1] * 1.002,
+        low: p[1] * 0.998,
         bull: i===0 || p[1] >= data.prices[i-1][1]
       }));
     } catch(e){
-      console.error('CoinGecko fetch error:', e.message);
+      console.error('Fetch error:', e.message);
       throw e;
     }
   }
 
-  // ── COMPUTE ONE TF ──
+  // ── COMPUTE TF ──
   function computeTF(candles, prefix){
     if(!candles||candles.length<26) return 'WAIT';
     const closes=candles.map(c=>c.close);
@@ -482,7 +480,6 @@
     const macdBull=macd!==null?macd>0:bullish;
     const macdBear=macd!==null?macd<0:!bullish;
 
-    // Update stats UI
     set(`${prefix}ema9`,  fmt(ema9,3));
     set(`${prefix}ema21`, fmt(ema21,3));
     const rsiEl=el(`${prefix}rsiV`);
@@ -494,7 +491,6 @@
     if(trendEl){trendEl.textContent=bullish?'▲ BULL':'▼ BEAR';trendEl.className=bullish?'sv green':'sv red';}
     set(`${prefix}count`, candles.length);
 
-    // Update confluence display
     const biasEl=el(prefix==='h1'?'h1bias':'h4bias');
     const rsiCEl=el(prefix==='h1'?'h1rsi':'h4rsi');
     if(biasEl){biasEl.textContent=bullish?'▲ BULL':'▼ BEAR';biasEl.className=bullish?'conf-val green':'conf-val red';}
@@ -502,39 +498,89 @@
 
     if(prefix==='h4') atrH4val=atr14;
 
-    // Signal logic
     let sig='WAIT';
     if(bullish && macdBull && rsi>38 && rsi<72) sig='BUY';
     if(!bullish && macdBear && rsi>28 && rsi<62) sig='SELL';
     return sig;
   }
 
-  // ── CONFLUENCE LOGIC ──
-  function updateConfluence(){
-    let newConf='WAIT';
-    let strength=0;
+  // ── DRAW CHART WITH CHART.JS ──
+  function drawChart(candles, chartId, accent){
+    const ctx = el(chartId);
+    if(!ctx) return;
 
-    if(sigH1==='BUY' && sigH4==='BUY'){
-      newConf='BUY';
-      strength=90;
-    } else if(sigH1==='SELL' && sigH4==='SELL'){
-      newConf='SELL';
-      strength=90;
-    } else if(sigH1==='BUY' && sigH4==='WAIT'){
-      newConf='BUY';
-      strength=55;
-    } else if(sigH1==='SELL' && sigH4==='WAIT'){
-      newConf='SELL';
-      strength=55;
-    } else if(sigH1==='WAIT' && sigH4==='BUY'){
-      newConf='BUY';
-      strength=65;
-    } else if(sigH1==='WAIT' && sigH4==='SELL'){
-      newConf='SELL';
-      strength=65;
-    } else {
-      strength=10;
-    }
+    const disp = candles.slice(-50);
+    const labels = disp.map((c,i) => i);
+    
+    const datasets = [{
+      label: 'Price',
+      data: disp.map(c => ({
+        x: candles.indexOf(c),
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close
+      })),
+      borderColor: accent,
+      backgroundColor: (ctx) => {
+        const c = ctx.raw;
+        return c.close >= c.open ? 'rgba(0, 229, 176, 0.3)' : 'rgba(255, 45, 85, 0.3)';
+      },
+      borderWidth: 1,
+      type: 'candlestick'
+    }];
+
+    // Remove old chart
+    if(chartId === 'chart1' && chartH1) chartH1.destroy();
+    if(chartId === 'chart4' && chartH4) chartH4.destroy();
+
+    const newChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Close Price',
+          data: disp.map(c => c.close),
+          borderColor: accent,
+          backgroundColor: disp.map(c => c.bull ? 'rgba(0, 229, 176, 0.4)' : 'rgba(255, 45, 85, 0.4)'),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: { color: '#3d5a7a', font: { size: 9 } },
+            grid: { color: '#14223a', drawBorder: false }
+          },
+          x: {
+            ticks: { display: false },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+
+    if(chartId === 'chart1') chartH1 = newChart;
+    if(chartId === 'chart4') chartH4 = newChart;
+  }
+
+  // ── CONFLUENCE ──
+  function updateConfluence(){
+    let newConf='WAIT', strength=0;
+
+    if(sigH1==='BUY' && sigH4==='BUY') { newConf='BUY'; strength=90; }
+    else if(sigH1==='SELL' && sigH4==='SELL') { newConf='SELL'; strength=90; }
+    else if(sigH1==='BUY' && sigH4==='WAIT') { newConf='BUY'; strength=55; }
+    else if(sigH1==='SELL' && sigH4==='WAIT') { newConf='SELL'; strength=55; }
+    else if(sigH1==='WAIT' && sigH4==='BUY') { newConf='BUY'; strength=65; }
+    else if(sigH1==='WAIT' && sigH4==='SELL') { newConf='SELL'; strength=65; }
+    else { strength=10; }
 
     confSig=newConf;
 
@@ -599,98 +645,11 @@
   }
   window.forceSignal=forceSignal;
 
-  // ── CANVAS DRAWING ──
-  function resizeCanvas(id){
-    const c=el(id);
-    if(!c) return;
-    const parent = c.parentElement;
-    if(!parent) return;
-    
-    const rect = parent.getBoundingClientRect();
-    const w = Math.max(100, rect.width);
-    const h = Math.max(100, rect.height);
-    
-    c.width = w;
-    c.height = h;
-  }
-
-  function drawCandles(id, candles, accent){
-    const c=el(id);
-    if(!c||!candles||candles.length===0) return;
-    const ctx=c.getContext('2d');
-    const W=c.width, H=c.height;
-    
-    ctx.fillStyle='#090d1c'; 
-    ctx.fillRect(0,0,W,H);
-    
-    ctx.strokeStyle='#14223a'; 
-    ctx.lineWidth=0.4;
-    for(let i=0;i<=4;i++){
-      const y=(H/4)*i;
-      ctx.beginPath();
-      ctx.moveTo(0,y);
-      ctx.lineTo(W,y);
-      ctx.stroke();
-    }
-
-    const disp=candles.slice(-50);
-    if(disp.length===0) return;
-    
-    const minP=Math.min(...disp.map(c=>c.low));
-    const maxP=Math.max(...disp.map(c=>c.high));
-    const range=maxP-minP||1;
-    const cW=Math.max(2,Math.floor(W/disp.length));
-    const pad=0.06;
-    const sY=v=>H*(1-pad)-((v-minP)/range)*H*(1-2*pad);
-
-    disp.forEach((c,i)=>{
-      const x=i*cW+cW/2;
-      ctx.strokeStyle=c.bull?'#00e5b0':'#ff2d55'; 
-      ctx.lineWidth=1;
-      ctx.beginPath();
-      ctx.moveTo(x,sY(c.high));
-      ctx.lineTo(x,sY(c.low));
-      ctx.stroke();
-      
-      ctx.fillStyle=c.bull?'#00e5b030':'#ff2d5530';
-      const top=Math.min(sY(c.close),sY(c.open));
-      const bH=Math.max(2,Math.abs(sY(c.close)-sY(c.open)));
-      ctx.fillRect(x-cW*0.35,top,cW*0.7,bH);
-    });
-
-    if(lastPrice!==null){
-      const yP=sY(lastPrice);
-      ctx.strokeStyle=accent; 
-      ctx.lineWidth=1.5; 
-      ctx.setLineDash([4,3]);
-      ctx.beginPath();
-      ctx.moveTo(0,yP);
-      ctx.lineTo(W,yP);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      
-      ctx.fillStyle=accent;
-      ctx.font='bold 11px Share Tech Mono,monospace';
-      ctx.textAlign='right';
-      ctx.fillText('$'+fmt(lastPrice,3),W-4,yP-4);
-    }
-  }
-
-  function resizeAll(){
-    resizeCanvas('chartH1');
-    resizeCanvas('chartH4');
-    drawCandles('chartH1', dataH1, '#3d9bff');
-    drawCandles('chartH4', dataH4, '#aa44ff');
-  }
-  
-  window.addEventListener('resize', resizeAll);
-  setInterval(resizeAll, 2000);
-
-  // ── FETCH H1 ──
+  // ── FETCH & UPDATE ──
   async function fetchH1(){
     try{
-      const allData = await fetchPriceData(90);
-      dataH1 = allData.slice(-60);  // Last 60 candles (~60 hours)
+      const allData = await fetchPriceData();
+      dataH1 = allData.slice(-60);
       lastPrice = dataH1[dataH1.length-1].close;
       set('confPrice','$'+fmt(lastPrice,3));
       set('tk-price','$'+fmt(lastPrice,3));
@@ -701,41 +660,34 @@
       const chgEl=el('tk-chg');
       if(chgEl){chgEl.textContent=(chg>=0?'+':'')+fmt(chg,3)+' ('+(chg>=0?'+':'')+fmt(chg/open*100,2)+'%)';chgEl.style.color=chg>=0?'var(--green)':'var(--red)';}
       sigH1 = computeTF(dataH1,'h1');
-      resizeCanvas('chartH1');
-      drawCandles('chartH1', dataH1, '#3d9bff');
+      drawChart(dataH1, 'chart1', '#3d9bff');
       cd1Rem = REFRESH_H1/1000;
     }catch(e){
-      console.error('H1 fetch error:',e.message);
-      setConn('error','H1 FETCH FAILED');
+      console.error('H1 error:', e.message);
+      setConn('error','H1 FAILED');
     }
   }
 
-  // ── FETCH H4 ──
   async function fetchH4(){
     try{
-      const allData = await fetchPriceData(365);
-      dataH4 = allData.slice(-96);  // Last 96 candles (~96 hours = 4 days)
+      const allData = await fetchPriceData();
+      dataH4 = allData.slice(-96);
       set('tk-h4hi', fmt(Math.max(...dataH4.map(c=>c.high)),3));
       set('tk-h4lo', fmt(Math.min(...dataH4.map(c=>c.low)),3));
       sigH4 = computeTF(dataH4,'h4');
-      resizeCanvas('chartH4');
-      drawCandles('chartH4', dataH4, '#aa44ff');
+      drawChart(dataH4, 'chart4', '#aa44ff');
       cd4Rem = REFRESH_H4/1000;
     }catch(e){
-      console.error('H4 fetch error:',e.message);
-      setConn('error','H4 FETCH FAILED');
+      console.error('H4 error:', e.message);
     }
   }
 
   // ── START ──
   async function startFeed(){
-    apiKey = el('apiKey')?.value?.trim();
-    if(!apiKey){ setConn('error','ENTER API KEY FIRST'); return; }
-
     if(pollH1) clearInterval(pollH1);
     if(pollH4) clearInterval(pollH4);
 
-    setConn('connecting','LOADING SPCX/USD H1 + H4...');
+    setConn('connecting','LOADING SPCX/USD DATA FROM COINGECKO...');
     set('tk-status','LOADING');
 
     try {
@@ -746,17 +698,10 @@
       set('tk-status','LIVE');
       startCountdowns();
 
-      pollH1 = setInterval(async()=>{
-        await fetchH1();
-        updateConfluence();
-      }, REFRESH_H1);
-
-      pollH4 = setInterval(async()=>{
-        await fetchH4();
-        updateConfluence();
-      }, REFRESH_H4);
+      pollH1 = setInterval(async()=>{ await fetchH1(); updateConfluence(); }, REFRESH_H1);
+      pollH4 = setInterval(async()=>{ await fetchH4(); updateConfluence(); }, REFRESH_H4);
     } catch(e) {
-      setConn('error', 'FAILED TO LOAD DATA: ' + e.message);
+      setConn('error', 'FAILED: ' + e.message);
     }
   }
   window.startFeed=startFeed;
@@ -766,9 +711,9 @@
     const key  = el('groqKey')?.value?.trim();
     const query= el('aiQry')?.value?.trim();
     const btn=el('aiBtn'), resp=el('aiResp');
-    if(!key){resp.textContent='Enter your Groq API key (gsk_...) to use AI analysis.';return;}
+    if(!key){resp.textContent='Enter Groq API key (gsk_...)';return;}
     btn.disabled=true;
-    resp.textContent='⚡ Analyzing SPCX/USD H1+H4 confluence...';
+    resp.textContent='⚡ Analyzing...';
     resp.className='ai-resp loading';
     try{
       const h1closes=dataH1.map(c=>c.close);
@@ -779,32 +724,7 @@
       const h1macd=calcMACD(h1closes),  h4macd=calcMACD(h4closes);
       const h1atr=calcATR(dataH1,14),   h4atr=calcATR(dataH4,14);
 
-      const prompt=`You are an expert cryptocurrency technical analyst specializing in multi-timeframe analysis. Analyze this LIVE SPCX/USD dual-timeframe data:
-
-SYMBOL: SPCX/USD
-
-CURRENT PRICE: $${fmt(lastPrice,3)}
-
-━━ H1 (1-HOUR) TIMEFRAME ━━
-EMA 9: ${fmt(h1ema9,3)} | EMA 21: ${fmt(h1ema21,3)} | Bias: ${h1ema9>h1ema21?'BULLISH':'BEARISH'}
-RSI(14): ${fmt(h1rsi,1)} — ${h1rsi>70?'Overbought':h1rsi<30?'Oversold':'Neutral'}
-MACD: ${fmt(h1macd,3)} — ${h1macd>0?'Bullish':'Bearish'}
-ATR(14): ${fmt(h1atr,3)} | Candles: ${dataH1.length}
-H1 Signal: ${sigH1}
-
-━━ H4 (4-HOUR) TIMEFRAME ━━
-EMA 9: ${fmt(h4ema9,3)} | EMA 21: ${fmt(h4ema21,3)} | Bias: ${h4ema9>h4ema21?'BULLISH':'BEARISH'}
-RSI(14): ${fmt(h4rsi,1)} — ${h4rsi>70?'Overbought':h4rsi<30?'Oversold':'Neutral'}
-MACD: ${fmt(h4macd,3)} — ${h4macd>0?'Bullish':'Bearish'}
-ATR(14): ${fmt(h4atr,3)} | Candles: ${dataH4.length}
-H4 Signal: ${sigH4}
-
-CONFLUENCE SIGNAL: ${confSig}
-TRADE LEVELS: Entry $${fmt(lastPrice,3)} | SL: $${fmt(lastPrice-(h4atr||0)*1.8,3)} | TP: $${fmt(lastPrice+(h4atr||0)*3.6,3)} (R:R 1:2)
-
-USER QUESTION: ${query}
-
-Provide concise multi-timeframe analysis: H4 trend direction, H1 entry timing, RSI/MACD confluence, entry validity, key levels, and risks. Max 320 words.`;
+      const prompt=`Analyze SPCX/USD: Price $${fmt(lastPrice,3)}, H1: EMA9 ${fmt(h1ema9,3)} > EMA21 ${fmt(h1ema21,3)}?, RSI ${fmt(h1rsi,1)}, MACD ${fmt(h1macd,3)}. H4: EMA9 ${fmt(h4ema9,3)} > EMA21 ${fmt(h4ema21,3)}?, RSI ${fmt(h4rsi,1)}, MACD ${fmt(h4macd,3)}. Signal: ${confSig}. Question: ${query}`;
 
       const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
         method:'POST',
@@ -820,7 +740,8 @@ Provide concise multi-timeframe analysis: H4 trend direction, H1 entry timing, R
   }
   window.askGroq=askGroq;
 
-  setTimeout(resizeAll, 500);
+  // Auto-start
+  startFeed();
 
 })();
 </script>
