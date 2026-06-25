@@ -1,131 +1,794 @@
-<!DOCTYPE html> 
-<html lang="en"> 
-<head> 
-<meta charset="UTF-8"> 
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-<title>FOCUS AUTO TRADERS · SPCXUSD · H1 + H4 · Groq AI</title> 
-<style> 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap'); 
-*{margin:0;padding:0;box-sizing:border-box} 
-:root{ 
- --bg:#060a10;--panel:#090d1c;--border:#14223a; 
- --green:#00e5b0;--red:#ff2d55;--gold:#f5c518;--blue:#3d9bff;--purple:#aa44ff; 
- --spcx:#ff6b35; 
- --text:#d8eaff;--dim:#3d5a7a; 
- --h1-accent:#3d9bff;--h4-accent:#aa44ff; 
- --glow-green:0 0 14px #00e5b0bb;--glow-red:0 0 14px #ff2d55bb; 
- --glow-gold:0 0 14px #f5c518bb;--glow-blue:0 0 14px #3d9bffbb; 
- --glow-purple:0 0 14px #aa44ffbb;--glow-spcx:0 0 18px #ff6b35cc; 
- --glow-h1:0 0 14px #3d9bffbb;--glow-h4:0 0 14px #aa44ffbb; 
-} 
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;background-image:radial-gradient(ellipse at 50% 0%,#ff6b3506 0%,transparent 65%)} 
-/* ── HEADER ── */ 
-.brand-badge{display:flex;align-items:center;gap:10px;margin-bottom:4px} 
-.brand-shield{width:32px;height:32px;background:var(--spcx);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-spcx);flex-shrink:0;font-family:'Orbitron',sans-serif;font-weight:900;color:#000;font-size:0.9rem} 
-.top-label{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.45em;color:var(--dim)} 
-.buy-sell-title{display:flex;gap:14px;align-items:center;font-family:'Orbitron',sans-serif;font-size:clamp(2.4rem,8vw,4.2rem);font-weight:900;line-height:1;margin-bottom:5px} 
-.buy-sell-title .buy{color:var(--green);text-shadow:var(--glow-green)} 
-.buy-sell-title .div{color:var(--dim);font-size:2rem} 
-.buy-sell-title .sell{color:var(--red);text-shadow:var(--glow-red)} 
-.sub-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--spcx);letter-spacing:.2em;margin-bottom:10px;text-shadow:var(--glow-spcx)} 
-/* TF pill badges */ 
-.tf-pills{display:flex;gap:8px;margin-bottom:10px} 
-.tf-pill{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:.08em} 
-.tf-pill.h1{background:#0a1830;border:1px solid var(--h1-accent);color:var(--h1-accent);box-shadow:var(--glow-h1)} 
-.tf-pill.h4{background:#160a2e;border:1px solid var(--h4-accent);color:var(--h4-accent);box-shadow:var(--glow-h4)} 
-.tf-pill.conf{background:#0d1a0a;border:1px solid var(--green);color:var(--green);box-shadow:var(--glow-green)} 
-/* ── STATUS BAR ── */ 
-.conn-status{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 14px;border-radius:20px;margin-bottom:10px;display:flex;align-items:center;gap:6px;border:1px solid var(--border)} 
-.conn-status.connecting{color:var(--gold);border-color:var(--gold)} 
-.conn-status.connected{color:var(--green);border-color:var(--green)} 
-.conn-status.error{color:var(--red);border-color:var(--red)} 
-.conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.4s infinite} 
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} 
-/* ── SIGNAL ALERT ── */ 
-.signal-alert{display:none;width:100%;max-width:980px;padding:12px 20px;border-radius:10px;margin-bottom:12px;font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;text-align:center;letter-spacing:.1em;animation:flashPulse 1s ease-in-out 3} 
-.signal-alert.buy{background:#00e5b015;border:2px solid var(--green);color:var(--green)} 
-.signal-alert.sell{background:#ff2d5515;border:2px solid var(--red);color:var(--red)} 
-@keyframes flashPulse{0%,100%{opacity:1}50%{opacity:.3}} 
-/* ── GROQ KEY BAR ── */ 
-.key-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap} 
-.key-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap} 
-.key-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:6px 10px;outline:none;flex:1;min-width:200px;transition:border-color .2s} 
-.key-inp:focus{border-color:var(--spcx)} 
-.key-btn{background:var(--spcx);color:#000;border:none;border-radius:5px;padding:6px 16px;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap} 
-.key-btn:hover{opacity:.85} 
-.key-hint{font-size:.62rem;color:var(--dim);width:100%} 
-.key-hint a{color:var(--spcx);text-decoration:none} 
-/* ── CONFLUENCE BANNER ── */ 
-.conf-banner{width:100%;max-width:980px;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;border:1px solid var(--border);background:var(--panel)} 
-.conf-title{font-family:'Orbitron',sans-serif;font-size:.68rem;color:var(--dim);letter-spacing:.12em;white-space:nowrap} 
-.conf-sig{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;min-width:90px} 
-.conf-sig.buy{color:var(--green);text-shadow:var(--glow-green)} 
-.conf-sig.sell{color:var(--red);text-shadow:var(--glow-red)} 
-.conf-sig.wait{color:var(--spcx);text-shadow:var(--glow-spcx)} 
-.conf-detail{display:flex;flex-direction:column;gap:3px;flex:1} 
-.conf-row{display:flex;gap:14px;flex-wrap:wrap} 
-.conf-item{display:flex;flex-direction:column;gap:1px} 
-.conf-lbl{font-size:.58rem;color:var(--dim);letter-spacing:.1em} 
-.conf-val{font-family:'Share Tech Mono',monospace;font-size:.88rem} 
-.conf-val.green{color:var(--green)}.conf-val.red{color:var(--red)}.conf-val.spcx{color:var(--spcx)} 
-.str-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-left:auto} 
-.str-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.1em} 
-.str-row{display:flex;align-items:center;gap:8px} 
-.str-bg{width:120px;height:7px;background:#14223a;border-radius:4px} 
-.str-bar{height:100%;border-radius:4px;background:var(--spcx);box-shadow:var(--glow-spcx);transition:width .6s} 
-.str-pct{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--spcx);min-width:40px;text-align:right} 
-/* ── DUAL PANEL ── */ 
-.dual-grid{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px} 
-.tf-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:280px} 
-.tf-panel.h1-panel{border-color:#1a2e4a} 
-.tf-panel.h4-panel{border-color:#221040} 
-.tp-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)} 
-.tp-header.h1{background:#0a1222;border-bottom-color:#1a2e4a} 
-.tp-header.h4{background:#0f0820;border-bottom-color:#221040} 
-.tp-dot{width:8px;height:8px;border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0} 
-.tp-dot.h1{background:var(--h1-accent);box-shadow:var(--glow-h1)} 
-.tp-dot.h4{background:var(--h4-accent);box-shadow:var(--glow-h4)} 
-.tp-sym{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700} 
-.tp-sym.h1{color:var(--h1-accent)} 
-.tp-sym.h4{color:var(--h4-accent)} 
-.tp-sig{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:900;margin-left:auto} 
-.tp-sig.buy{color:var(--green);text-shadow:var(--glow-green)} 
-.tp-sig.sell{color:var(--red);text-shadow:var(--glow-red)} 
-.tp-sig.wait{color:var(--dim)} 
-.tp-body{padding:12px;font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.6;color:var(--text);white-space:pre-wrap;min-height:200px} 
-/* ── TRADE LEVELS ── */ 
-.levels-strip{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px} 
-.ls-div{background:var(--border)} 
-.ls-cell{padding:14px 16px;display:flex;align-items:center;gap:12px} 
-.ls-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0} 
-.ls-icon.green{border:2px solid var(--green);color:var(--green);box-shadow:var(--glow-green)} 
-.ls-icon.red{border:2px solid var(--red);color:var(--red);box-shadow:var(--glow-red)} 
-.ls-icon.spcx{border:2px solid var(--spcx);color:var(--spcx);box-shadow:var(--glow-spcx)} 
-.ls-txt .bl{font-size:.56rem;letter-spacing:.15em;color:var(--dim)} 
-.ls-txt .bv{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700} 
-.ls-txt .bv.green{color:var(--green);text-shadow:var(--glow-green)} 
-.ls-txt .bv.red{color:var(--red);text-shadow:var(--glow-red)} 
-.ls-txt .bv.spcx{color:var(--spcx);text-shadow:var(--glow-spcx)} 
-.ls-sub{font-size:.6rem;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px} 
-/* ── GROQ AI SECTION ── */ 
-.ai-section{width:100%;max-width:980px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden} 
-.ai-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);background:#090c1e} 
-.ai-hdr-title{font-family:'Orbitron',sans-serif;font-size:.78rem;color:var(--spcx);letter-spacing:.08em} 
-.ai-hdr-model{font-size:.68rem;color:var(--dim);margin-left:auto;font-family:'Share Tech Mono',monospace} 
-.ai-inputs{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap} 
-.ai-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:8px 12px;outline:none;transition:border-color .2s} 
-.ai-inp:focus{border-color:var(--spcx)} 
-.ai-key{width:280px} 
-.ai-btn{background:var(--spcx);color:#000;border:none;border-radius:5px;padding:8px 18px;font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer} 
-.ai-output{padding:14px;font-family:'Share Tech Mono',monospace;font-size:.8rem;line-height:1.5;min-height:120px;color:var(--text)} 
-</style> 
-</head> 
-<body> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOCUS AUTO TRADERS · SPCX/USD · H1 + H4 · Twelve Data</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#060a10;--panel:#090d1c;--border:#14223a;
+    --green:#00e5b0;--red:#ff2d55;--gold:#f5c518;--blue:#3d9bff;--purple:#aa44ff;
+    --spcx:#1e90ff;
+    --text:#d8eaff;--dim:#3d5a7a;
+    --h1-accent:#3d9bff;--h4-accent:#aa44ff;
+    --glow-green:0 0 14px #00e5b0bb;--glow-red:0 0 14px #ff2d55bb;
+    --glow-gold:0 0 14px #f5c518bb;--glow-blue:0 0 14px #3d9bffbb;
+    --glow-purple:0 0 14px #aa44ffbb;--glow-spcx:0 0 18px #1e90ffcc;
+    --glow-h1:0 0 14px #3d9bffbb;--glow-h4:0 0 14px #aa44ffbb;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;background-image:radial-gradient(ellipse at 50% 0%,#1e90ff06 0%,transparent 65%)}
 
-<div class="brand-badge">
- <div class="brand-shield">SP</div>
- <div class="top-label">FOCUS AUTO TRADERS</div>
+  /* ── HEADER ── */
+  .spcx-badge{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .spcx-shield{width:32px;height:32px;background:var(--spcx);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-spcx);flex-shrink:0}
+  .spcx-shield svg{width:18px;height:18px;fill:#000}
+  .top-label{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.45em;color:var(--dim)}
+  .buy-sell-title{display:flex;gap:14px;align-items:center;font-family:'Orbitron',sans-serif;font-size:clamp(2.4rem,8vw,4.2rem);font-weight:900;line-height:1;margin-bottom:5px}
+  .buy-sell-title .buy{color:var(--green);text-shadow:var(--glow-green)}
+  .buy-sell-title .div{color:var(--dim);font-size:2rem}
+  .buy-sell-title .sell{color:var(--red);text-shadow:var(--glow-red)}
+  .sub-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--spcx);letter-spacing:.2em;margin-bottom:10px;text-shadow:var(--glow-spcx)}
+
+  /* TF pill badges */
+  .tf-pills{display:flex;gap:8px;margin-bottom:10px}
+  .tf-pill{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:.08em}
+  .tf-pill.h1{background:#0a1830;border:1px solid var(--h1-accent);color:var(--h1-accent);box-shadow:var(--glow-h1)}
+  .tf-pill.h4{background:#160a2e;border:1px solid var(--h4-accent);color:var(--h4-accent);box-shadow:var(--glow-h4)}
+  .tf-pill.conf{background:#0d1a0a;border:1px solid var(--green);color:var(--green);box-shadow:var(--glow-green)}
+
+  /* ── STATUS BAR ── */
+  .conn-status{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 14px;border-radius:20px;margin-bottom:10px;display:flex;align-items:center;gap:6px;border:1px solid var(--border)}
+  .conn-status.connecting{color:var(--gold);border-color:var(--gold)}
+  .conn-status.connected{color:var(--green);border-color:var(--green)}
+  .conn-status.error{color:var(--red);border-color:var(--red)}
+  .conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* ── SIGNAL ALERT ── */
+  .signal-alert{display:none;width:100%;max-width:980px;padding:12px 20px;border-radius:10px;margin-bottom:12px;font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;text-align:center;letter-spacing:.1em;animation:flashPulse 1s ease-in-out 3}
+  .signal-alert.buy{background:#00e5b015;border:2px solid var(--green);color:var(--green)}
+  .signal-alert.sell{background:#ff2d5515;border:2px solid var(--red);color:var(--red)}
+  @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* ── KEY BAR ── */
+  .key-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .key-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
+  .key-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:6px 10px;outline:none;flex:1;min-width:200px;transition:border-color .2s}
+  .key-inp:focus{border-color:var(--spcx)}
+  .key-btn{background:var(--spcx);color:#fff;border:none;border-radius:5px;padding:6px 16px;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+  .key-btn:hover{opacity:.85}
+  .key-hint{font-size:.62rem;color:var(--dim);width:100%}
+  .key-hint a{color:var(--spcx);text-decoration:none}
+
+  /* ── COUNTDOWN ── */
+  .countdown-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:6px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .cd-label{font-size:.62rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
+  .cd-block{display:flex;align-items:center;gap:6px;flex:1}
+  .cd-tf{font-size:.6rem;font-family:'Orbitron',sans-serif;min-width:22px}
+  .cd-tf.h1{color:var(--h1-accent)}
+  .cd-tf.h4{color:var(--h4-accent)}
+  .cd-track{flex:1;height:4px;background:#14223a;border-radius:3px}
+  .cd-fill{height:100%;border-radius:3px;transition:width 1s linear}
+  .cd-fill.h1{background:var(--h1-accent)}
+  .cd-fill.h4{background:var(--h4-accent)}
+  .cd-val{font-family:'Orbitron',sans-serif;font-size:.72rem;min-width:38px;text-align:right}
+  .cd-val.h1{color:var(--h1-accent)}
+  .cd-val.h4{color:var(--h4-accent)}
+
+  /* ── CONFLUENCE BANNER ── */
+  .conf-banner{width:100%;max-width:980px;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;border:1px solid var(--border);background:var(--panel)}
+  .conf-title{font-family:'Orbitron',sans-serif;font-size:.68rem;color:var(--dim);letter-spacing:.12em;white-space:nowrap}
+  .conf-sig{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;min-width:90px}
+  .conf-sig.buy{color:var(--green);text-shadow:var(--glow-green)}
+  .conf-sig.sell{color:var(--red);text-shadow:var(--glow-red)}
+  .conf-sig.wait{color:var(--spcx);text-shadow:var(--glow-spcx)}
+  .conf-detail{display:flex;flex-direction:column;gap:3px;flex:1}
+  .conf-row{display:flex;gap:14px}
+  .conf-item{display:flex;flex-direction:column;gap:1px}
+  .conf-lbl{font-size:.58rem;color:var(--dim);letter-spacing:.1em}
+  .conf-val{font-family:'Share Tech Mono',monospace;font-size:.88rem}
+  .conf-val.green{color:var(--green)}.conf-val.red{color:var(--red)}.conf-val.spcx{color:var(--spcx)}
+  .str-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-left:auto}
+  .str-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+  .str-row{display:flex;align-items:center;gap:8px}
+  .str-bg{width:120px;height:7px;background:#14223a;border-radius:4px}
+  .str-bar{height:100%;border-radius:4px;background:var(--spcx);box-shadow:var(--glow-spcx);transition:width .6s}
+  .str-pct{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--spcx);min-width:40px;text-align:right}
+
+  /* ── DUAL CHART GRID ── */
+  .dual-grid{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .tf-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .tf-panel.h1-panel{border-color:#1a2e4a}
+  .tf-panel.h4-panel{border-color:#221040}
+  .tp-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)}
+  .tp-header.h1{background:#0a1222;border-bottom-color:#1a2e4a}
+  .tp-header.h4{background:#0f0820;border-bottom-color:#221040}
+  .tp-dot{width:8px;height:8px;border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0}
+  .tp-dot.h1{background:var(--h1-accent);box-shadow:var(--glow-h1)}
+  .tp-dot.h4{background:var(--h4-accent);box-shadow:var(--glow-h4)}
+  .tp-sym{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700}
+  .tp-sym.h1{color:var(--h1-accent)}
+  .tp-sym.h4{color:var(--h4-accent)}
+  .tp-sig{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:900;margin-left:auto}
+  .tp-sig.buy{color:var(--green);text-shadow:var(--glow-green)}
+  .tp-sig.sell{color:var(--red);text-shadow:var(--glow-red)}
+  .tp-sig.wait{color:var(--dim)}
+  .tp-body{display:flex}
+  .tp-stats{width:120px;min-width:110px;padding:8px 10px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+  .tp-stats.h1{border-right-color:#1a2e4a}
+  .tp-stats.h4{border-right-color:#221040}
+  .sg{display:flex;flex-direction:column;gap:1px}
+  .sl{font-size:.58rem;letter-spacing:.1em;color:var(--dim)}
+  .sv{font-family:'Share Tech Mono',monospace;font-size:.82rem}
+  .sv.green{color:var(--green)}.sv.red{color:var(--red)}.sv.spcx{color:var(--spcx)}
+  .sv.h1c{color:var(--h1-accent)}.sv.h4c{color:var(--h4-accent)}
+  .tp-chart{flex:1;min-height:200px;position:relative}
+  .tp-chart canvas{display:block;width:100%;height:100%}
+
+  /* ── TICKER STRIP ── */
+  .ticker-strip{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:7px 16px;margin-bottom:10px;display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
+  .ticker-strip::-webkit-scrollbar{display:none}
+  .tk{display:flex;flex-direction:column;gap:2px;min-width:72px}
+  .tk-l{font-size:.58rem;color:var(--dim);letter-spacing:.08em}
+  .tk-v{font-family:'Share Tech Mono',monospace;font-size:.82rem}
+
+  /* ── TRADE LEVELS ── */
+  .levels-strip{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .ls-div{background:var(--border)}
+  .ls-cell{padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .ls-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+  .ls-icon.green{border:2px solid var(--green);color:var(--green);box-shadow:var(--glow-green)}
+  .ls-icon.red{border:2px solid var(--red);color:var(--red);box-shadow:var(--glow-red)}
+  .ls-icon.spcx{border:2px solid var(--spcx);color:var(--spcx);box-shadow:var(--glow-spcx)}
+  .ls-txt .bl{font-size:.56rem;letter-spacing:.15em;color:var(--dim)}
+  .ls-txt .bv{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700}
+  .ls-txt .bv.green{color:var(--green);text-shadow:var(--glow-green)}
+  .ls-txt .bv.red{color:var(--red);text-shadow:var(--glow-red)}
+  .ls-txt .bv.spcx{color:var(--spcx);text-shadow:var(--glow-spcx)}
+  .ls-sub{font-size:.6rem;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px}
+
+  /* ── AI SECTION ── */
+  .ai-section{width:100%;max-width:980px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .ai-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);background:#090c1e}
+  .ai-hdr-title{font-family:'Orbitron',sans-serif;font-size:.78rem;color:var(--spcx);letter-spacing:.08em}
+  .ai-hdr-model{font-size:.68rem;color:var(--dim);margin-left:auto;font-family:'Share Tech Mono',monospace}
+  .ai-inputs{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .ai-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:8px 12px;outline:none;transition:border-color .2s}
+  .ai-inp:focus{border-color:var(--spcx)}
+  .ai-key{width:220px}.ai-qry{flex:1;min-width:180px}
+  .ai-btn{background:var(--spcx);color:#fff;border:none;border-radius:5px;padding:8px 16px;font-family:'Orbitron',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .2s}
+  .ai-btn:hover{opacity:.85}.ai-btn:disabled{opacity:.35;cursor:not-allowed}
+  .ai-resp{padding:13px 16px;min-height:76px;font-family:'Rajdhani',sans-serif;font-size:.95rem;line-height:1.65;color:var(--text);white-space:pre-wrap}
+  .ai-resp.loading{color:var(--dim);font-style:italic}.ai-resp.error{color:var(--red)}
+
+  /* ── FORCE BTNS ── */
+  .force-row{display:flex;gap:8px;width:100%;max-width:980px;margin-bottom:12px}
+  .btn{flex:1;padding:10px 0;border:none;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s}
+  .btn:hover{opacity:.85}.btn:active{transform:scale(.97)}
+  .btn.long{background:var(--green);color:#000;box-shadow:var(--glow-green)}
+  .btn.short{background:var(--red);color:#fff;box-shadow:var(--glow-red)}
+
+  @media(max-width:680px){
+    .dual-grid{grid-template-columns:1fr}
+    .levels-strip{grid-template-columns:1fr}.ls-div{display:none}
+    .str-bg{width:80px}
+    .ai-key{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<div class="spcx-badge">
+  <div class="spcx-shield">
+    <svg viewBox="0 0 24 24"><path d="M7 7h7.5l-8 10H16M7 7V5h10v2M8 17v2h8v-2"/></svg>
+  </div>
+  <div class="top-label">SPCX · DUAL TIMEFRAME · FOCUS AUTO TRADERS</div>
 </div>
 
-<div class="buy-sell-title">
- <span class="buy">BUY
+<div class="buy-sell-title"><span class="buy">BUY</span><span class="div">|</span><span class="sell">SELL</span></div>
+<div class="sub-label">⚡ SPCX/USD · H1 + H4 CONFLUENCE · FOCUS AUTO TRADERS</div>
+
+<div class="tf-pills">
+  <div class="tf-pill h1">H1 · 1 HOUR</div>
+  <div class="tf-pill h4">H4 · 4 HOUR</div>
+  <div class="tf-pill conf">DUAL-TF CONFLUENCE</div>
+</div>
+
+<div class="conn-status connecting" id="connStatus">
+  <div class="conn-dot"></div>
+  <span id="connText">ENTER API KEY TO START</span>
+</div>
+
+<div class="signal-alert" id="signalAlert"></div>
+
+<div class="key-bar">
+  <div class="key-label">TWELVE DATA KEY:</div>
+  <input class="key-inp" id="tdKey" type="password" placeholder="Paste your free Twelve Data API key...">
+  <button class="key-btn" onclick="startFeed()">▶ START H1 + H4 FEED</button>
+  <div class="key-hint">
+    Free plan at <a href="https://twelvedata.com/apikey" target="_blank">twelvedata.com/apikey</a>
+    · H1 refreshes every 5 min · H4 refreshes every 15 min · SPCX/USD pair
+  </div>
+</div>
+
+<!-- Dual countdown bars -->
+<div class="countdown-bar" id="countdownBar" style="display:none">
+  <div class="cd-label">REFRESH</div>
+  <div class="cd-block">
+    <span class="cd-tf h1">H1</span>
+    <div class="cd-track"><div class="cd-fill h1" id="cdFill1" style="width:100%"></div></div>
+    <span class="cd-val h1" id="cdVal1">5m</span>
+  </div>
+  <div class="cd-block">
+    <span class="cd-tf h4">H4</span>
+    <div class="cd-track"><div class="cd-fill h4" id="cdFill4" style="width:100%"></div></div>
+    <span class="cd-val h4" id="cdVal4">15m</span>
+  </div>
+</div>
+
+<!-- CONFLUENCE BANNER -->
+<div class="conf-banner" id="confBanner">
+  <div class="conf-title">CONFLUENCE<br>SIGNAL</div>
+  <div class="conf-sig wait" id="confSig">WAIT ◆</div>
+  <div class="conf-detail">
+    <div class="conf-row">
+      <div class="conf-item"><div class="conf-lbl">H1 BIAS</div><div class="conf-val spcx" id="h1bias">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">H4 BIAS</div><div class="conf-val spcx" id="h4bias">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">H1 RSI</div><div class="conf-val spcx" id="h1rsi">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">H4 RSI</div><div class="conf-val spcx" id="h4rsi">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">LAST PRICE</div><div class="conf-val spcx" id="confPrice">--</div></div>
+    </div>
+  </div>
+  <div class="str-wrap">
+    <div class="str-lbl">CONFLUENCE STRENGTH</div>
+    <div class="str-row">
+      <div class="str-bg"><div class="str-bar" id="strBar" style="width:0%"></div></div>
+      <div class="str-pct" id="strPct">--</div>
+    </div>
+  </div>
+</div>
+
+<!-- DUAL CHART PANELS -->
+<div class="dual-grid">
+
+  <!-- H1 Panel -->
+  <div class="tf-panel h1-panel">
+    <div class="tp-header h1">
+      <div class="tp-dot h1"></div>
+      <div class="tp-sym h1">SPCX/USD · H1</div>
+      <div class="tp-sig wait" id="h1sig">WAIT</div>
+    </div>
+    <div class="tp-body">
+      <div class="tp-stats h1">
+        <div class="sg"><div class="sl">EMA 9</div><div class="sv h1c" id="h1ema9">--</div></div>
+        <div class="sg"><div class="sl">EMA 21</div><div class="sv h1c" id="h1ema21">--</div></div>
+        <div class="sg"><div class="sl">RSI(14)</div><div class="sv" id="h1rsiV">--</div></div>
+        <div class="sg"><div class="sl">MACD</div><div class="sv" id="h1macd">--</div></div>
+        <div class="sg"><div class="sl">ATR(14)</div><div class="sv h1c" id="h1atr">--</div></div>
+        <div class="sg"><div class="sl">TREND</div><div class="sv" id="h1trend">--</div></div>
+        <div class="sg"><div class="sl">CANDLES</div><div class="sv h1c" id="h1count">--</div></div>
+      </div>
+      <div class="tp-chart"><canvas id="chartH1"></canvas></div>
+    </div>
+  </div>
+
+  <!-- H4 Panel -->
+  <div class="tf-panel h4-panel">
+    <div class="tp-header h4">
+      <div class="tp-dot h4"></div>
+      <div class="tp-sym h4">SPCX/USD · H4</div>
+      <div class="tp-sig wait" id="h4sig">WAIT</div>
+    </div>
+    <div class="tp-body">
+      <div class="tp-stats h4">
+        <div class="sg"><div class="sl">EMA 9</div><div class="sv h4c" id="h4ema9">--</div></div>
+        <div class="sg"><div class="sl">EMA 21</div><div class="sv h4c" id="h4ema21">--</div></div>
+        <div class="sg"><div class="sl">RSI(14)</div><div class="sv" id="h4rsiV">--</div></div>
+        <div class="sg"><div class="sl">MACD</div><div class="sv" id="h4macd">--</div></div>
+        <div class="sg"><div class="sl">ATR(14)</div><div class="sv h4c" id="h4atr">--</div></div>
+        <div class="sg"><div class="sl">TREND</div><div class="sv" id="h4trend">--</div></div>
+        <div class="sg"><div class="sl">CANDLES</div><div class="sv h4c" id="h4count">--</div></div>
+      </div>
+      <div class="tp-chart"><canvas id="chartH4"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TICKER STRIP -->
+<div class="ticker-strip">
+  <div class="tk"><div class="tk-l">LAST PRICE</div><div class="tk-v" style="color:var(--spcx)" id="tk-price">--</div></div>
+  <div class="tk"><div class="tk-l">H1 HIGH</div><div class="tk-v" style="color:var(--green)" id="tk-h1hi">--</div></div>
+  <div class="tk"><div class="tk-l">H1 LOW</div><div class="tk-v" style="color:var(--red)" id="tk-h1lo">--</div></div>
+  <div class="tk"><div class="tk-l">H4 HIGH</div><div class="tk-v" style="color:var(--green)" id="tk-h4hi">--</div></div>
+  <div class="tk"><div class="tk-l">H4 LOW</div><div class="tk-v" style="color:var(--red)" id="tk-h4lo">--</div></div>
+  <div class="tk"><div class="tk-l">H1 CHANGE</div><div class="tk-v" id="tk-chg">--</div></div>
+  <div class="tk"><div class="tk-l">SOURCE</div><div class="tk-v" style="color:var(--spcx)">TWELVE DATA</div></div>
+  <div class="tk"><div class="tk-l">STATUS</div><div class="tk-v" style="color:var(--spcx)" id="tk-status">OFFLINE</div></div>
+</div>
+
+<!-- TRADE LEVELS -->
+<div class="levels-strip">
+  <div class="ls-cell">
+    <div class="ls-icon green">↗</div>
+    <div class="ls-txt">
+      <div class="bl">ENTRY</div>
+      <div class="bv green" id="b-entry">--</div>
+      <div class="ls-sub" id="b-entry-tf">H1 + H4 CONFLUENCE</div>
+    </div>
+  </div>
+  <div class="ls-div"></div>
+  <div class="ls-cell">
+    <div class="ls-icon red">🛡</div>
+    <div class="ls-txt">
+      <div class="bl">STOP LOSS</div>
+      <div class="bv red" id="b-stop">--</div>
+      <div class="ls-sub">ATR × 1.8 · H4 BASED</div>
+    </div>
+  </div>
+  <div class="ls-div"></div>
+  <div class="ls-cell">
+    <div class="ls-icon spcx">🎯</div>
+    <div class="ls-txt">
+      <div class="bl">TP TARGET</div>
+      <div class="bv spcx" id="b-target">--</div>
+      <div class="ls-sub">R:R 1:2 · H4 ATR BASED</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORCE SIGNAL BUTTONS -->
+<div class="force-row">
+  <button class="btn long" onclick="forceSignal('BUY')">▲ FORCE LONG</button>
+  <button class="btn short" onclick="forceSignal('SELL')">▼ FORCE SHORT</button>
+</div>
+
+<!-- AI SECTION -->
+<div class="ai-section">
+  <div class="ai-hdr">
+    <span style="font-size:1.1rem">🤖</span>
+    <div class="ai-hdr-title">GROQ AI · SPCX/USD H1+H4 CONFLUENCE ANALYSIS</div>
+    <div class="ai-hdr-model">llama-3.3-70b-versatile</div>
+  </div>
+  <div class="ai-inputs">
+    <input class="ai-inp ai-key" id="groqKey" type="password" placeholder="Groq API Key (gsk_...)">
+    <input class="ai-inp ai-qry" id="aiQry" type="text" value="Analyze H1 + H4 confluence and suggest the best SPCX/USD entry">
+    <button class="ai-btn" id="aiBtn" onclick="askGroq()">⚡ ANALYZE</button>
+  </div>
+  <div class="ai-resp" id="aiResp">Ready for AI analysis. Enter Groq API key and click ANALYZE.</div>
+</div>
+
+<script>
+(function(){
+
+  // ── CONFIG ──
+  const SYMBOL   = 'SPCX/USD';
+  const BASE_URL = 'https://api.twelvedata.com';
+  const REFRESH_H1 = 5 * 60 * 1000;    // 5 min
+  const REFRESH_H4 = 15 * 60 * 1000;   // 15 min
+  const SIZE_H1  = 100;
+  const SIZE_H4  = 80;
+
+  // ── STATE ──
+  let apiKey      = '';
+  let dataH1      = [];
+  let dataH4      = [];
+  let sigH1       = 'WAIT';
+  let sigH4       = 'WAIT';
+  let confSig     = 'WAIT';
+  let lastPrice   = null;
+  let atrH4val    = null;
+  let pollH1      = null;
+  let pollH4      = null;
+  let cd1Rem      = REFRESH_H1/1000;
+  let cd4Rem      = REFRESH_H4/1000;
+  let cdTimer     = null;
+
+  // ── HELPERS ──
+  const el  = id => document.getElementById(id);
+  const set = (id, v) => { const e = el(id); if(e) e.textContent = v; };
+  const fmt = (v, d=2) => (v == null || isNaN(v)) ? '--' : parseFloat(v).toFixed(d);
+
+  function setConn(state, text){
+    const s=el('connStatus'), t=el('connText');
+    if(s) s.className='conn-status '+state;
+    if(t) t.textContent=text;
+  }
+
+  // ── COUNTDOWN ──
+  function startCountdowns(){
+    el('countdownBar').style.display='flex';
+    cd1Rem = REFRESH_H1/1000;
+    cd4Rem = REFRESH_H4/1000;
+    if(cdTimer) clearInterval(cdTimer);
+    cdTimer = setInterval(()=>{
+      cd1Rem = Math.max(0, cd1Rem-1);
+      cd4Rem = Math.max(0, cd4Rem-1);
+      const p1=(cd1Rem/(REFRESH_H1/1000))*100;
+      const p4=(cd4Rem/(REFRESH_H4/1000))*100;
+      el('cdFill1').style.width=p1+'%';
+      el('cdFill4').style.width=p4+'%';
+      set('cdVal1', cd1Rem>=60 ? Math.floor(cd1Rem/60)+'m'+(cd1Rem%60>0?cd1Rem%60+'s':'') : cd1Rem+'s');
+      set('cdVal4', cd4Rem>=60 ? Math.floor(cd4Rem/60)+'m'+(cd4Rem%60>0?cd4Rem%60+'s':'') : cd4Rem+'s');
+    },1000);
+  }
+
+  // ── INDICATORS ──
+  function calcEMA(d, p){
+    if(!d||d.length<p) return null;
+    const k=2/(p+1);
+    let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;
+    for(let i=p;i<d.length;i++) e=d[i]*k+e*(1-k);
+    return e;
+  }
+  function calcRSI(d, p=14){
+    if(!d||d.length<p+1) return null;
+    const ch=[];
+    for(let i=1;i<d.length;i++) ch.push(d[i]-d[i-1]);
+    const r=ch.slice(-p);
+    const g=r.filter(c=>c>0).reduce((a,b)=>a+b,0)/p;
+    const l=Math.abs(r.filter(c=>c<0).reduce((a,b)=>a+b,0)/p);
+    return l===0?100:100-(100/(1+g/l));
+  }
+  function calcATR(c, p){
+    if(!c||c.length<p+1) return null;
+    const trs=[];
+    for(let i=1;i<c.length;i++){
+      const cv=c[i],pv=c[i-1];
+      trs.push(Math.max(cv.high-cv.low,Math.abs(cv.high-pv.close),Math.abs(cv.low-pv.close)));
+    }
+    return trs.slice(-p).reduce((a,b)=>a+b,0)/p;
+  }
+  function calcMACD(d){
+    if(!d||d.length<26) return null;
+    const e12=calcEMA(d,12),e26=calcEMA(d,26);
+    return (e12&&e26)?e12-e26:null;
+  }
+
+  // ── FETCH ONE TF ──
+  async function fetchTF(interval, outputsize){
+    const url=`${BASE_URL}/time_series?symbol=${encodeURIComponent(SYMBOL)}&interval=${interval}&outputsize=${outputsize}&apikey=${apiKey}`;
+    const resp=await fetch(url);
+    const data=await resp.json();
+    if(data.status==='error'||data.code) throw new Error(data.message||'API error');
+    if(!data.values||data.values.length===0) throw new Error('No data returned');
+    return [...data.values].reverse().map(v=>({
+      open:parseFloat(v.open),high:parseFloat(v.high),
+      low:parseFloat(v.low),close:parseFloat(v.close),
+      date:v.datetime, bull:parseFloat(v.close)>=parseFloat(v.open)
+    }));
+  }
+
+  // ── COMPUTE ONE TF ──
+  function computeTF(candles, prefix){
+    if(!candles||candles.length<26) return 'WAIT';
+    const closes=candles.map(c=>c.close);
+    const ema9=calcEMA(closes,9), ema21=calcEMA(closes,21);
+    const rsi=calcRSI(closes,14);
+    const atr14=calcATR(candles,14);
+    const macd=calcMACD(closes);
+    if(!ema9||!ema21||rsi===null) return 'WAIT';
+
+    const bullish=ema9>ema21;
+    const macdBull=macd!==null?macd>0:bullish;
+    const macdBear=macd!==null?macd<0:!bullish;
+
+    // Update stats UI
+    set(`${prefix}ema9`,  fmt(ema9,3));
+    set(`${prefix}ema21`, fmt(ema21,3));
+    const rsiEl=el(`${prefix}rsiV`);
+    if(rsiEl){rsiEl.textContent=fmt(rsi,1);rsiEl.className=rsi>70?'sv red':rsi<30?'sv green':'sv spcx';}
+    const macdEl=el(`${prefix}macd`);
+    if(macdEl){macdEl.textContent=(macd>=0?'+':'')+fmt(macd,3);macdEl.className=macd>=0?'sv green':'sv red';}
+    set(`${prefix}atr`,   fmt(atr14,3));
+    const trendEl=el(`${prefix}trend`);
+    if(trendEl){trendEl.textContent=bullish?'▲ BULL':'▼ BEAR';trendEl.className=bullish?'sv green':'sv red';}
+    set(`${prefix}count`, candles.length);
+
+    // Update confluence display
+    const biasEl=el(prefix==='h1'?'h1bias':'h4bias');
+    const rsiCEl=el(prefix==='h1'?'h1rsi':'h4rsi');
+    if(biasEl){biasEl.textContent=bullish?'▲ BULL':'▼ BEAR';biasEl.className=bullish?'conf-val green':'conf-val red';}
+    if(rsiCEl){rsiCEl.textContent=fmt(rsi,1);rsiCEl.className=rsi>70?'conf-val red':rsi<30?'conf-val green':'conf-val spcx';}
+
+    if(prefix==='h4') atrH4val=atr14;
+
+    // Signal logic (wider bands for crypto)
+    let sig='WAIT';
+    if(bullish && macdBull && rsi>38 && rsi<72) sig='BUY';
+    if(!bullish && macdBear && rsi>28 && rsi<62) sig='SELL';
+    return sig;
+  }
+
+  // ── CONFLUENCE LOGIC ──
+  function updateConfluence(){
+    let newConf='WAIT';
+    let strength=0;
+
+    if(sigH1==='BUY' && sigH4==='BUY'){
+      newConf='BUY';
+      strength=90;
+    } else if(sigH1==='SELL' && sigH4==='SELL'){
+      newConf='SELL';
+      strength=90;
+    } else if(sigH1==='BUY' && sigH4==='WAIT'){
+      newConf='BUY';
+      strength=55;
+    } else if(sigH1==='SELL' && sigH4==='WAIT'){
+      newConf='SELL';
+      strength=55;
+    } else if(sigH1==='WAIT' && sigH4==='BUY'){
+      newConf='BUY';
+      strength=65;
+    } else if(sigH1==='WAIT' && sigH4==='SELL'){
+      newConf='SELL';
+      strength=65;
+    } else {
+      strength=10;
+    }
+
+    confSig=newConf;
+
+    // Update confluence UI
+    const cSigEl=el('confSig');
+    if(cSigEl){
+      cSigEl.textContent=newConf==='BUY'?'BUY ▲':newConf==='SELL'?'SELL ▼':'WAIT ◆';
+      cSigEl.className=newConf==='BUY'?'conf-sig buy':newConf==='SELL'?'conf-sig sell':'conf-sig wait';
+    }
+    if(el('strBar')) el('strBar').style.width=strength+'%';
+    set('strPct', strength+'%');
+
+    // H1/H4 individual sig badges
+    const s1=el('h1sig');
+    if(s1){s1.textContent=sigH1;s1.className=sigH1==='BUY'?'tp-sig buy':sigH1==='SELL'?'tp-sig sell':'tp-sig wait';}
+    const s4=el('h4sig');
+    if(s4){s4.textContent=sigH4;s4.className=sigH4==='BUY'?'tp-sig buy':sigH4==='SELL'?'tp-sig sell':'tp-sig wait';}
+
+    // Apply trade levels if signal
+    if(newConf!=='WAIT' && lastPrice){
+      const atr=atrH4val||lastPrice*0.01;
+      applyLevels(newConf, lastPrice, atr);
+    }
+
+    // Flash alert on state change
+    flashAlert(newConf, lastPrice, atrH4val);
+  }
+
+  function applyLevels(type, price, atr){
+    const isBuy=type==='BUY';
+    const stop  =isBuy?price-atr*1.8:price+atr*1.8;
+    const target=isBuy?price+atr*3.6:price-atr*3.6;
+    set('b-entry', '$'+fmt(price,3));
+    set('b-stop',  '$'+fmt(stop,3));
+    set('b-target','$'+fmt(target,3));
+    set('b-entry-tf', isBuy?'H1+H4 BULLISH CONFLUENCE':'H1+H4 BEARISH CONFLUENCE');
+  }
+
+  let lastAlertSig='';
+  function flashAlert(sig, price, atr){
+    if(sig===lastAlertSig||sig==='WAIT') return;
+    lastAlertSig=sig;
+    const isBuy=sig==='BUY';
+    const stop=atr?price-(atr*1.8*(isBuy?1:-1)):null;
+    const tp=atr?price+(atr*3.6*(isBuy?1:-1)):null;
+    const a=el('signalAlert');
+    if(a){
+      a.textContent=isBuy
+        ?`🟢 H1+H4 BUY · Entry: $${fmt(price,3)} · SL: $${fmt(stop,3)} · TP: $${fmt(tp,3)}`
+        :`🔴 H1+H4 SELL · Entry: $${fmt(price,3)} · SL: $${fmt(stop,3)} · TP: $${fmt(tp,3)}`;
+      a.className=isBuy?'signal-alert buy':'signal-alert sell';
+      a.style.display='block';
+      setTimeout(()=>{a.style.display='none';},7000);
+    }
+  }
+
+  function forceSignal(type){
+    if(!lastPrice) return;
+    const atr=atrH4val||lastPrice*0.01;
+    applyLevels(type, lastPrice, atr);
+    const cSigEl=el('confSig');
+    if(cSigEl){
+      cSigEl.textContent=type==='BUY'?'BUY ▲':'SELL ▼';
+      cSigEl.className=type==='BUY'?'conf-sig buy':'conf-sig sell';
+    }
+  }
+  window.forceSignal=forceSignal;
+
+  // ── CANVAS DRAWING ──
+  function setupCanvas(id){
+    const c=el(id);
+    if(!c) return null;
+    const ctx=c.getContext('2d');
+    return {c, ctx};
+  }
+
+  function resizeCanvas(id){
+    const c=el(id);
+    if(!c) return;
+    c.width  = c.parentElement?.clientWidth  || 300;
+    c.height = c.parentElement?.clientHeight || 200;
+  }
+
+  function drawCandles(id, candles, accent){
+    const c=el(id);
+    if(!c||!candles||candles.length===0) return;
+    const ctx=c.getContext('2d');
+    const W=c.width, H=c.height;
+    ctx.fillStyle='#090d1c'; ctx.fillRect(0,0,W,H);
+    // Grid
+    ctx.strokeStyle='#14223a'; ctx.lineWidth=0.4;
+    for(let i=0;i<=4;i++){const y=(H/4)*i;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    const disp=candles.slice(-50);
+    const minP=Math.min(...disp.map(c=>c.low));
+    const maxP=Math.max(...disp.map(c=>c.high));
+    const range=maxP-minP||1;
+    const cW=Math.max(4,Math.floor(W/disp.length));
+    const pad=0.06;
+    const sY=v=>H*(1-pad)-((v-minP)/range)*H*(1-2*pad);
+
+    disp.forEach((c,i)=>{
+      const x=i*cW+cW/2;
+      ctx.strokeStyle=c.bull?'#00e5b0':'#ff2d55'; ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x,sY(c.high));ctx.lineTo(x,sY(c.low));ctx.stroke();
+      ctx.fillStyle=c.bull?'#00e5b030':'#ff2d5530';
+      const top=Math.min(sY(c.close),sY(c.open));
+      const bH=Math.max(2,Math.abs(sY(c.close)-sY(c.open)));
+      ctx.fillRect(x-cW*0.35,top,cW*0.7,bH);
+    });
+
+    // Price line in accent color
+    if(lastPrice!==null){
+      const yP=sY(lastPrice);
+      ctx.strokeStyle=accent; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(0,yP);ctx.lineTo(W,yP);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=accent;ctx.font='10px Share Tech Mono,monospace';
+      ctx.textAlign='right';ctx.fillText('$'+fmt(lastPrice,3),W-3,yP-3);ctx.textAlign='left';
+    }
+  }
+
+  function resizeAll(){
+    resizeCanvas('chartH1'); resizeCanvas('chartH4');
+    drawCandles('chartH1', dataH1, '#3d9bff');
+    drawCandles('chartH4', dataH4, '#aa44ff');
+  }
+  window.addEventListener('resize', resizeAll);
+  setInterval(resizeAll, 3000);
+
+  // ── FETCH H1 ──
+  async function fetchH1(){
+    try{
+      dataH1 = await fetchTF('1h', SIZE_H1);
+      lastPrice = dataH1[dataH1.length-1].close;
+      set('confPrice','$'+fmt(lastPrice,3));
+      set('tk-price','$'+fmt(lastPrice,3));
+      set('tk-h1hi', fmt(Math.max(...dataH1.map(c=>c.high)),3));
+      set('tk-h1lo', fmt(Math.min(...dataH1.map(c=>c.low)),3));
+      const open=dataH1[0].open;
+      const chg=lastPrice-open;
+      const chgEl=el('tk-chg');
+      if(chgEl){chgEl.textContent=(chg>=0?'+':'')+fmt(chg,3)+' ('+(chg>=0?'+':'')+fmt(chg/open*100,2)+'%)';chgEl.style.color=chg>=0?'var(--green)':'var(--red)';}
+      sigH1 = computeTF(dataH1,'h1');
+      resizeCanvas('chartH1');
+      drawCandles('chartH1', dataH1, '#3d9bff');
+      cd1Rem = REFRESH_H1/1000;
+    }catch(e){
+      console.error('H1 fetch error:',e.message);
+    }
+  }
+
+  // ── FETCH H4 ──
+  async function fetchH4(){
+    try{
+      dataH4 = await fetchTF('4h', SIZE_H4);
+      set('tk-h4hi', fmt(Math.max(...dataH4.map(c=>c.high)),3));
+      set('tk-h4lo', fmt(Math.min(...dataH4.map(c=>c.low)),3));
+      sigH4 = computeTF(dataH4,'h4');
+      resizeCanvas('chartH4');
+      drawCandles('chartH4', dataH4, '#aa44ff');
+      cd4Rem = REFRESH_H4/1000;
+    }catch(e){
+      console.error('H4 fetch error:',e.message);
+    }
+  }
+
+  // ── START ──
+  async function startFeed(){
+    apiKey = el('tdKey')?.value?.trim();
+    if(!apiKey){ setConn('error','ENTER API KEY FIRST'); return; }
+    if(pollH1) clearInterval(pollH1);
+    if(pollH4) clearInterval(pollH4);
+
+    setConn('connecting','LOADING SPCX/USD H1 + H4...');
+    set('tk-status','LOADING');
+
+    // Initial fetch both
+    await Promise.all([fetchH1(), fetchH4()]);
+    updateConfluence();
+
+    setConn('connected','LIVE · SPCX/USD H1+H4 · AUTO-REFRESH');
+    set('tk-status','LIVE');
+    startCountdowns();
+
+    // Poll H1 every 5 min
+    pollH1 = setInterval(async()=>{
+      await fetchH1();
+      updateConfluence();
+    }, REFRESH_H1);
+
+    // Poll H4 every 15 min
+    pollH4 = setInterval(async()=>{
+      await fetchH4();
+      updateConfluence();
+    }, REFRESH_H4);
+  }
+  window.startFeed=startFeed;
+
+  // ── GROQ AI ──
+  async function askGroq(){
+    const key  = el('groqKey')?.value?.trim();
+    const query= el('aiQry')?.value?.trim();
+    const btn=el('aiBtn'), resp=el('aiResp');
+    if(!key){resp.textContent='Enter your Groq API key (gsk_...) to use AI analysis.';return;}
+    btn.disabled=true;
+    resp.textContent='⚡ Analyzing SPCX/USD H1+H4 confluence...';
+    resp.className='ai-resp loading';
+    try{
+      const h1closes=dataH1.map(c=>c.close);
+      const h4closes=dataH4.map(c=>c.close);
+      const h1ema9=calcEMA(h1closes,9),h1ema21=calcEMA(h1closes,21);
+      const h4ema9=calcEMA(h4closes,9),h4ema21=calcEMA(h4closes,21);
+      const h1rsi=calcRSI(h1closes,14), h4rsi=calcRSI(h4closes,14);
+      const h1macd=calcMACD(h1closes),  h4macd=calcMACD(h4closes);
+      const h1atr=calcATR(dataH1,14),   h4atr=calcATR(dataH4,14);
+
+      const prompt=`You are an expert cryptocurrency technical analyst specializing in multi-timeframe analysis. Analyze this LIVE SPCX/USD dual-timeframe data:
+
+SOURCE: Twelve Data REST API · Symbol: SPCX/USD
+
+CURRENT PRICE: $${fmt(lastPrice,3)}
+
+━━ H1 (1-HOUR) TIMEFRAME ━━
+EMA 9: ${fmt(h1ema9,3)} | EMA 21: ${fmt(h1ema21,3)} | Bias: ${h1ema9>h1ema21?'BULLISH':'BEARISH'}
+RSI(14): ${fmt(h1rsi,1)} — ${h1rsi>70?'Overbought':h1rsi<30?'Oversold':'Neutral'}
+MACD: ${fmt(h1macd,3)} — ${h1macd>0?'Bullish':'Bearish'}
+ATR(14): ${fmt(h1atr,3)} | Candles: ${dataH1.length}
+H1 Signal: ${sigH1}
+
+━━ H4 (4-HOUR) TIMEFRAME ━━
+EMA 9: ${fmt(h4ema9,3)} | EMA 21: ${fmt(h4ema21,3)} | Bias: ${h4ema9>h4ema21?'BULLISH':'BEARISH'}
+RSI(14): ${fmt(h4rsi,1)} — ${h4rsi>70?'Overbought':h4rsi<30?'Oversold':'Neutral'}
+MACD: ${fmt(h4macd,3)} — ${h4macd>0?'Bullish':'Bearish'}
+ATR(14): ${fmt(h4atr,3)} | Candles: ${dataH4.length}
+H4 Signal: ${sigH4}
+
+CONFLUENCE SIGNAL: ${confSig}
+TRADE LEVELS: Entry $${fmt(lastPrice,3)} | SL: $${fmt(lastPrice-(h4atr||0)*1.8,3)} | TP: $${fmt(lastPrice+(h4atr||0)*3.6,3)} (R:R 1:2)
+
+USER QUESTION: ${query}
+
+Provide concise multi-timeframe analysis: H4 trend direction (higher timeframe bias), H1 entry timing, RSI/MACD confluence across both TFs, entry validity, key S/R levels, and SPCX-specific risks. Max 320 words.`;
+
+      const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+        body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:500,temperature:0.65})
+      });
+      const d=await r.json();
+      if(d.error) throw new Error(d.error.message);
+      resp.textContent=d.choices?.[0]?.message?.content||'No response';
+      resp.className='ai-resp';
+    }catch(e){resp.textContent='❌ '+e.message;resp.className='ai-resp error';}
+    finally{btn.disabled=false;}
+  }
+  window.askGroq=askGroq;
+
+  // Initial canvas resize
+  setTimeout(resizeAll, 300);
+
+})();
+</script>
+</body>
+</html>
