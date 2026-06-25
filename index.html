@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMX Synthetics - SPCXUSD Market Setup</title>
+    <title>SPCXUSD - GMX Synthetic Indicator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -11,134 +11,112 @@
         .code-block { 
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
             white-space: pre-wrap;
-        }
-        pre {
             overflow-x: auto;
         }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-200">
     <div class="max-w-5xl mx-auto p-8">
+        
         <!-- Header -->
         <div class="flex items-center gap-4 mb-10 border-b border-gray-800 pb-8">
-            <i class="fa-solid fa-rocket text-5xl text-orange-500"></i>
+            <i class="fa-solid fa-chart-line text-5xl text-orange-500"></i>
             <div>
-                <h1 class="text-5xl font-bold tracking-tight">GMX Synthetics</h1>
-                <p class="text-2xl text-orange-400 mt-1">SPCXUSD Market Configuration</p>
+                <h1 class="text-5xl font-bold">SPCXUSD Indicator</h1>
+                <p class="text-2xl text-orange-400">GMX Synthetic Perpetual Monitor</p>
             </div>
         </div>
 
         <div class="bg-gradient-to-r from-orange-900 to-gray-900 rounded-3xl p-10 mb-10 text-center">
-            <h2 class="text-4xl font-bold mb-3 flex items-center justify-center gap-4">
-                <span class="text-emerald-400">🚀</span> 
-                SPCXUSD Synthetic Perpetual
-            </h2>
-            <p class="text-xl text-gray-300">Pre-IPO SpaceX Exposure • Max 10x Leverage • Arbitrum + Avalanche</p>
+            <h2 class="text-4xl font-bold mb-3">🚀 SPCXUSD Live Performance Indicator</h2>
+            <p class="text-xl text-gray-300">TradingView Pine Script for GMX Pre-IPO SpaceX Synthetic</p>
         </div>
 
-        <!-- Quick Start -->
+        <!-- Pine Script -->
         <div class="mb-12">
             <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
-                <i class="fa-solid fa-bolt text-yellow-400"></i> Quick Start
+                <i class="fa-solid fa-code"></i> 
+                TradingView Pine Script v5
             </h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-gray-900 p-7 rounded-2xl">
-                    <h3 class="text-orange-400 font-semibold text-lg mb-4">1. Clone Repository</h3>
-                    <pre class="code-block bg-black p-5 rounded-xl text-sm text-emerald-300">git clone https://github.com/YOUR-USERNAME/gmx-synthetics.git
-cd gmx-synthetics
-npm install
-npx hardhat compile</pre>
-                </div>
-                <div class="bg-gray-900 p-7 rounded-2xl">
-                    <h3 class="text-orange-400 font-semibold text-lg mb-4">2. Add SPCXUSD</h3>
-                    <p class="text-gray-400">Update <code class="bg-gray-800 px-2 py-1 rounded">config/tokens.ts</code> and <code class="bg-gray-800 px-2 py-1 rounded">config/markets.ts</code></p>
-                </div>
-            </div>
+            <pre class="code-block bg-zinc-950 p-8 rounded-3xl text-sm leading-relaxed text-emerald-300">
+//@version=5
+indicator("SPCXUSD - GMX Synthetic Monitor", shorttitle="SPCXUSD GMX", overlay=true, max_bars_back=1000)
+
+// === INPUTS ===
+showEMA     = input.bool(true,  "Show EMA 50/200")
+showFunding = input.bool(true,  "Show Estimated Funding Rate")
+leverage    = input.int(10,     "Max Leverage", minval=1, maxval=50)
+
+// === PRICE DATA ===
+price = close
+ema50 = ta.ema(price, 50)
+ema200 = ta.ema(price, 200)
+
+// === MOMENTUM & STRENGTH ===
+rsi = ta.rsi(price, 14)
+mom = ta.mom(price, 10)
+
+// === BACKGROUND COLOR ===
+bgColor = price > ema200 ? color.new(#22c55e, 90) : color.new(#ef4444, 90)
+
+// === PLOTS ===
+plot(price,      title="SPCXUSD Price", color=color.white, linewidth=3)
+plot(showEMA ? ema50  : na, title="EMA 50",  color=color.orange, linewidth=2)
+plot(showEMA ? ema200 : na, title="EMA 200", color=color.blue,   linewidth=2)
+
+// Estimated Funding Rate (GMX-style)
+estFunding = (price - price[1]) / price * 100 * 8
+plot(showFunding ? estFunding : na, title="Est. Funding %", color=color.purple, style=plot.style_columns, linewidth=3)
+
+// === SHAPES & LABELS ===
+bgcolor(bgColor, title="Trend Background")
+
+plotshape(rsi > 70,  title="Overbought",  location=location.abovebar, color=color.red,   style=shape.triangledown, size=size.small)
+plotshape(rsi < 30,  title="Oversold",    location=location.belowbar, color=color.green, style=shape.triangleup,   size=size.small)
+
+// Alerts
+alertcondition(ta.crossover(price, ema50),  "Bullish Cross",  "SPCXUSD crossed above EMA50")
+alertcondition(ta.crossunder(price, ema200), "Bearish Cross", "SPCXUSD crossed below EMA200")
+
+// Info Table
+var table info = table.new(position.top_right, 2, 6, bgcolor=color.new(#1f2937, 80))
+if bar_index % 10 == 0
+    table.cell(info, 0, 0, "SPCXUSD", text_color=color.white)
+    table.cell(info, 1, 0, str.tostring(price, "#.##"), text_color=color.white)
+    table.cell(info, 0, 1, "RSI", text_color=color.white)
+    table.cell(info, 1, 1, str.tostring(rsi, "#.##"), text_color=rsi>70?color.red:rsi<30?color.green:color.white)
+    table.cell(info, 0, 2, "Est Funding", text_color=color.white)
+    table.cell(info, 1, 2, str.tostring(estFunding, "#.##") + "%", text_color=color.purple)
+    table.cell(info, 0, 3, "Trend", text_color=color.white)
+    table.cell(info, 1, 3, price > ema200 ? "BULLISH" : "BEARISH", text_color=price>ema200?color.green:color.red)
+            </pre>
         </div>
 
-        <!-- Token Config -->
-        <div class="mb-12">
-            <h2 class="text-3xl font-bold mb-6">1. Add SPCX Token — <span class="text-orange-400">config/tokens.ts</span></h2>
-            <pre class="code-block bg-zinc-950 p-8 rounded-3xl text-sm leading-relaxed text-emerald-300 overflow-x-auto">
-SPCX: {
-  name: "SPCX",
-  symbol: "SPCX",
-  decimals: 18,
-  address: "0x0000000000000000000000000000000000000000", // synthetic token
-  synthetic: true,
-  dataStreamFeedId: "0xYOUR_ACTUAL_SPCX_DATASTREAM_FEED_ID_HERE",
-  dataStreamFeedDecimals: 18,
-  oracleTimestampAdjustment: 1,
-  isStable: false,
-  isShortable: true,
-  isSynthetic: true,
-},</pre>
-        </div>
-
-        <!-- Market Config -->
-        <div class="mb-12">
-            <h2 class="text-3xl font-bold mb-6">2. Add SPCXUSD Market — <span class="text-orange-400">config/markets.ts</span></h2>
-            <pre class="code-block bg-zinc-950 p-8 rounded-3xl text-sm leading-relaxed text-sky-300 overflow-x-auto">
-{
-  tokens: {
-    indexToken: "SPCX",
-    longToken: "WETH",
-    shortToken: "USDC"
-  },
-  virtualTokenIdForIndexToken: hashString("PERP:SPCX/USD"),
-  virtualMarketId: hashString("SPOT:SPCX/USD"),
-
-  ...syntheticMarketConfig,
-  ...fundingRateConfig_Default,
-  ...borrowingRateConfig_HighMax_WithHigherBase,
-
-  // === SPCX Specific Parameters ===
-  negativePositionImpactFactor: exponentToFloat("5e-10"),
-  positivePositionImpactFactor: exponentToFloat("2.5e-10"),
-  negativePositionImpactExponentFactor: exponentToFloat("2.2e0"),
-
-  negativeSwapImpactFactor: exponentToFloat("5e-9"),
-  positiveSwapImpactFactor: exponentToFloat("2.5e-9"),
-
-  minCollateralFactor: percentageToFloat("10%"),           // ~10x max leverage
-  minCollateralFactorForLiquidation: percentageToFloat("10%"),
-
-  reserveFactor: percentageToFloat("125%"),
-  openInterestReserveFactor: percentageToFloat("120%"),
-
-  maxOpenInterest: decimalToFloat(5_000_000),
-  maxOpenInterestForLongs: decimalToFloat(3_000_000),
-  maxOpenInterestForShorts: decimalToFloat(3_000_000),
-
-  maxPoolUsdForDeposit: decimalToFloat(10_000_000),
-  maxLongTokenPoolAmount: expandDecimals(5000, 18),
-  maxShortTokenPoolAmount: expandDecimals(10_000_000, 6),
-
-  atomicSwapFeeFactor: percentageToFloat("2.25%"),
-  isDisabled: false,
-},</pre>
-        </div>
-
-        <!-- Deployment -->
-        <div class="bg-gray-900 rounded-3xl p-10 mb-12">
-            <h2 class="text-3xl font-bold mb-6">Deployment</h2>
-            <pre class="code-block bg-black p-6 rounded-2xl text-lg">npx hardhat run scripts/deployContracts.ts --network arbitrum</pre>
-            <p class="mt-6 text-gray-400">Create a <code class="bg-black px-2 py-1 rounded">.env</code> file with your RPC URLs and private key before deploying.</p>
+        <!-- How to Use -->
+        <div class="bg-gray-900 rounded-3xl p-8 mb-10">
+            <h3 class="font-bold text-2xl mb-6 text-orange-400">How to Add to TradingView</h3>
+            <ol class="list-decimal pl-6 space-y-4 text-gray-300">
+                <li>Go to <a href="https://www.tradingview.com/" class="text-orange-400 hover:underline">TradingView</a></li>
+                <li>Open Pine Editor (bottom of chart)</li>
+                <li>Delete everything and paste the code above</li>
+                <li>Click "Save" and name it "SPCXUSD GMX Synthetic"</li>
+                <li>Add to chart and search for SPCXUSD (use GMX or Crypto.com feed)</li>
+            </ol>
         </div>
 
         <!-- Notes -->
-        <div class="border border-orange-500/30 bg-orange-950/30 rounded-3xl p-10">
-            <h3 class="font-bold text-2xl text-orange-400 mb-6">Important Notes</h3>
-            <ul class="space-y-4 text-gray-300">
-                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Replace <code>YOUR_ACTUAL_SPCX_DATASTREAM_FEED_ID_HERE</code> with the real GMX oracle feed ID</li>
-                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Start with low maxOpenInterest and increase gradually via governance</li>
-                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Test on testnet / fork before mainnet</li>
-                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Config follows official GMX synthetic market pattern (June 2026)</li>
+        <div class="border border-orange-500/30 bg-orange-950/30 rounded-3xl p-8">
+            <h3 class="font-bold text-orange-400 mb-4 text-xl">SPCXUSD on GMX Notes</h3>
+            <ul class="space-y-3 text-sm">
+                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Max ~10x leverage</li>
+                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Synthetic perpetual using GMX Oracle</li>
+                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Watch funding rate for long-term positions</li>
+                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Limited initial Open Interest — trade carefully</li>
             </ul>
         </div>
 
-        <div class="text-center text-gray-500 mt-16">
-            Generated for GitHub • SPCXUSD Synthetic Market • June 2026
+        <div class="text-center text-gray-500 mt-16 text-sm">
+            SPCXUSD GMX Synthetic Indicator • Generated June 2026
         </div>
     </div>
 </body>
