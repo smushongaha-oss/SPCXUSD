@@ -124,7 +124,7 @@
   .sv{font-family:'Share Tech Mono',monospace;font-size:.82rem}
   .sv.green{color:var(--green)}.sv.red{color:var(--red)}.sv.spcx{color:var(--spcx)}
   .sv.h1c{color:var(--h1-accent)}.sv.h4c{color:var(--h4-accent)}
-  .tp-chart{flex:1;min-height:200px;position:relative}
+  .tp-chart{flex:1;min-height:200px;position:relative;display:flex;align-items:center;justify-content:center}
   .tp-chart canvas{display:block;width:100%;height:100%}
 
   /* ── TICKER STRIP ── */
@@ -269,7 +269,7 @@
         <div class="sg"><div class="sl">TREND</div><div class="sv" id="h1trend">--</div></div>
         <div class="sg"><div class="sl">CANDLES</div><div class="sv h1c" id="h1count">--</div></div>
       </div>
-      <div class="tp-chart"><canvas id="chartH1"></canvas></div>
+      <div class="tp-chart"><canvas id="chartH1" width="400" height="200"></canvas></div>
     </div>
   </div>
 
@@ -290,7 +290,7 @@
         <div class="sg"><div class="sl">TREND</div><div class="sv" id="h4trend">--</div></div>
         <div class="sg"><div class="sl">CANDLES</div><div class="sv h4c" id="h4count">--</div></div>
       </div>
-      <div class="tp-chart"><canvas id="chartH4"></canvas></div>
+      <div class="tp-chart"><canvas id="chartH4" width="400" height="200"></canvas></div>
     </div>
   </div>
 
@@ -596,18 +596,20 @@
   window.forceSignal=forceSignal;
 
   // ── CANVAS DRAWING ──
-  function setupCanvas(id){
-    const c=el(id);
-    if(!c) return null;
-    const ctx=c.getContext('2d');
-    return {c, ctx};
-  }
-
   function resizeCanvas(id){
     const c=el(id);
     if(!c) return;
-    c.width  = c.parentElement?.clientWidth  || 300;
-    c.height = c.parentElement?.clientHeight || 200;
+    const parent = c.parentElement;
+    if(!parent) return;
+    
+    // Get real dimensions from parent
+    const rect = parent.getBoundingClientRect();
+    const w = Math.max(100, rect.width);
+    const h = Math.max(100, rect.height);
+    
+    // Set canvas size
+    c.width = w;
+    c.height = h;
   }
 
   function drawCandles(id, candles, accent){
@@ -615,46 +617,76 @@
     if(!c||!candles||candles.length===0) return;
     const ctx=c.getContext('2d');
     const W=c.width, H=c.height;
-    ctx.fillStyle='#090d1c'; ctx.fillRect(0,0,W,H);
-    // Grid
-    ctx.strokeStyle='#14223a'; ctx.lineWidth=0.4;
-    for(let i=0;i<=4;i++){const y=(H/4)*i;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    
+    // Fill background
+    ctx.fillStyle='#090d1c'; 
+    ctx.fillRect(0,0,W,H);
+    
+    // Grid lines
+    ctx.strokeStyle='#14223a'; 
+    ctx.lineWidth=0.4;
+    for(let i=0;i<=4;i++){
+      const y=(H/4)*i;
+      ctx.beginPath();
+      ctx.moveTo(0,y);
+      ctx.lineTo(W,y);
+      ctx.stroke();
+    }
 
     const disp=candles.slice(-50);
+    if(disp.length===0) return;
+    
     const minP=Math.min(...disp.map(c=>c.low));
     const maxP=Math.max(...disp.map(c=>c.high));
     const range=maxP-minP||1;
-    const cW=Math.max(4,Math.floor(W/disp.length));
+    const cW=Math.max(2,Math.floor(W/disp.length));
     const pad=0.06;
     const sY=v=>H*(1-pad)-((v-minP)/range)*H*(1-2*pad);
 
+    // Draw candles
     disp.forEach((c,i)=>{
       const x=i*cW+cW/2;
-      ctx.strokeStyle=c.bull?'#00e5b0':'#ff2d55'; ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(x,sY(c.high));ctx.lineTo(x,sY(c.low));ctx.stroke();
+      ctx.strokeStyle=c.bull?'#00e5b0':'#ff2d55'; 
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(x,sY(c.high));
+      ctx.lineTo(x,sY(c.low));
+      ctx.stroke();
+      
       ctx.fillStyle=c.bull?'#00e5b030':'#ff2d5530';
       const top=Math.min(sY(c.close),sY(c.open));
       const bH=Math.max(2,Math.abs(sY(c.close)-sY(c.open)));
       ctx.fillRect(x-cW*0.35,top,cW*0.7,bH);
     });
 
-    // Price line in accent color
+    // Price line
     if(lastPrice!==null){
       const yP=sY(lastPrice);
-      ctx.strokeStyle=accent; ctx.lineWidth=1; ctx.setLineDash([4,3]);
-      ctx.beginPath();ctx.moveTo(0,yP);ctx.lineTo(W,yP);ctx.stroke();ctx.setLineDash([]);
-      ctx.fillStyle=accent;ctx.font='10px Share Tech Mono,monospace';
-      ctx.textAlign='right';ctx.fillText('$'+fmt(lastPrice,3),W-3,yP-3);ctx.textAlign='left';
+      ctx.strokeStyle=accent; 
+      ctx.lineWidth=1.5; 
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      ctx.moveTo(0,yP);
+      ctx.lineTo(W,yP);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      ctx.fillStyle=accent;
+      ctx.font='bold 11px Share Tech Mono,monospace';
+      ctx.textAlign='right';
+      ctx.fillText('$'+fmt(lastPrice,3),W-4,yP-4);
     }
   }
 
   function resizeAll(){
-    resizeCanvas('chartH1'); resizeCanvas('chartH4');
+    resizeCanvas('chartH1');
+    resizeCanvas('chartH4');
     drawCandles('chartH1', dataH1, '#3d9bff');
     drawCandles('chartH4', dataH4, '#aa44ff');
   }
+  
   window.addEventListener('resize', resizeAll);
-  setInterval(resizeAll, 3000);
+  setInterval(resizeAll, 2000);
 
   // ── FETCH H1 ──
   async function fetchH1(){
@@ -784,8 +816,8 @@ Provide concise multi-timeframe analysis: H4 trend direction (higher timeframe b
   }
   window.askGroq=askGroq;
 
-  // Initial canvas resize
-  setTimeout(resizeAll, 300);
+  // Initial canvas setup with delay
+  setTimeout(resizeAll, 500);
 
 })();
 </script>
