@@ -310,7 +310,7 @@
                 <div>4H Timeframe</div>
                 <div id="connection-status" class="connection-status">
                     <span class="status-dot status-connecting"></span>
-                    <span>Connecting...</span>
+                    <span>Loading historical data...</span>
                 </div>
                 <div id="last-update">Last Update: --:-- UTC</div>
             </div>
@@ -362,7 +362,7 @@
                         <span id="signal-badge" class="signal-badge badge-neutral">--</span>
                     </div>
                     <div style="font-size: 13px; color: #cbd5e1; line-height: 1.5;">
-                        <div id="signal-reason">Connecting to Binance WebSocket...</div>
+                        <div id="signal-reason">Loading candle history from Binance...</div>
                     </div>
                 </div>
                 <div class="signal-strength">
@@ -423,7 +423,7 @@
         </div>
         
         <div class="footer">
-            Live data from Binance Perpetual Futures WebSocket API • H4 Timeframe
+            Live data from Binance Perpetual Futures • H4 Timeframe
         </div>
     </div>
 
@@ -436,6 +436,39 @@
                 this.maxReconnectAttempts = 10;
                 this.reconnectDelay = 1000;
                 this.chart = null;
+                this.isInitialized = false;
+            }
+            
+            async init() {
+                await this.loadHistoricalData();
+                this.connect();
+            }
+            
+            async loadHistoricalData() {
+                this.setConnectionStatus('connecting', 'Fetching historical data...');
+                try {
+                    const response = await fetch(
+                        'https://fapi.binance.com/fapi/v1/klines?symbol=SPCXUSD&interval=4h&limit=100'
+                    );
+                    const data = await response.json();
+                    
+                    this.candles = data.map(kline => ({
+                        time: kline[0],
+                        open: parseFloat(kline[1]),
+                        high: parseFloat(kline[2]),
+                        low: parseFloat(kline[3]),
+                        close: parseFloat(kline[4]),
+                        volume: parseFloat(kline[7]),
+                        isClosed: true
+                    }));
+                    
+                    this.isInitialized = true;
+                    this.update();
+                    console.log(`Loaded ${this.candles.length} historical candles`);
+                } catch (error) {
+                    console.error('Error loading historical data:', error);
+                    this.setConnectionStatus('disconnected', 'Failed to load historical data');
+                }
             }
             
             connect() {
@@ -505,7 +538,7 @@
                     }
                 }
                 
-                if (this.candles.length >= 26) {
+                if (this.isInitialized && this.candles.length >= 26) {
                     this.update();
                 }
             }
@@ -794,7 +827,7 @@
         }
         
         const trader = new BinanceTrader();
-        trader.connect();
+        trader.init();
     </script>
 </body>
 </html>
