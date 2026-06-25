@@ -1,123 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPCXUSD - GMX Synthetic Indicator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; }
-        .code-block { 
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
-            white-space: pre-wrap;
-            overflow-x: auto;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPCXUSD · GMX Synthetic · H1 + H4 Live Monitor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#060a10;--panel:#090d1c;--border:#14223a;
+    --green:#00e5b0;--red:#ff2d55;--gold:#f5c518;--blue:#3d9bff;--purple:#aa44ff;
+    --spcx:#00d4ff;
+    --text:#d8eaff;--dim:#3d5a7a;
+    --h1-accent:#00d4ff;--h4-accent:#aa44ff;
+    --glow-green:0 0 14px #00e5b0bb;--glow-red:0 0 14px #ff2d55bb;
+    --glow-spcx:0 0 18px #00d4ffcc;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;background-image:radial-gradient(ellipse at 50% 0%,#00d4ff08 0%,transparent 65%)}
+
+  .spcx-badge{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .spcx-shield{width:36px;height:36px;background:var(--spcx);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-spcx);font-size:20px}
+
+  .top-label{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.45em;color:var(--dim)}
+  .buy-sell-title{display:flex;gap:14px;align-items:center;font-family:'Orbitron',sans-serif;font-size:clamp(2.4rem,8vw,4.2rem);font-weight:900;line-height:1;margin-bottom:5px}
+  .buy-sell-title .buy{color:var(--green);text-shadow:var(--glow-green)}
+  .buy-sell-title .div{color:var(--dim);font-size:2rem}
+  .buy-sell-title .sell{color:var(--red);text-shadow:var(--glow-red)}
+  .sub-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--spcx);letter-spacing:.2em;margin-bottom:10px;text-shadow:var(--glow-spcx)}
+
+  .tf-pills{display:flex;gap:8px;margin-bottom:10px}
+  .tf-pill{font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:.08em}
+  .tf-pill.h1{background:#0a1830;border:1px solid var(--h1-accent);color:var(--h1-accent);box-shadow:0 0 12px #00d4ff88}
+  .tf-pill.h4{background:#160a2e;border:1px solid var(--h4-accent);color:var(--h4-accent)}
+  .tf-pill.conf{background:#0d1a0a;border:1px solid var(--green);color:var(--green)}
+
+  .conn-status{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 14px;border-radius:20px;margin-bottom:10px;display:flex;align-items:center;gap:6px;border:1px solid var(--border)}
+  .conn-status.connecting{color:var(--gold);border-color:var(--gold)}
+  .conn-status.connected{color:var(--green);border-color:var(--green)}
+  .conn-status.error{color:var(--red);border-color:var(--red)}
+  .conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .signal-alert{display:none;width:100%;max-width:980px;padding:14px 20px;border-radius:10px;margin-bottom:12px;font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;text-align:center;letter-spacing:.1em;animation:flashPulse 1s ease-in-out 3}
+  .signal-alert.buy{background:#00e5b015;border:2px solid var(--green);color:var(--green)}
+  .signal-alert.sell{background:#ff2d5515;border:2px solid var(--red);color:var(--red)}
+  @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  .key-bar{width:100%;max-width:980px;background:#090d1c;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .key-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
+  .key-inp{background:#04070e;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:6px 10px;outline:none;flex:1;min-width:220px}
+  .key-inp:focus{border-color:var(--spcx)}
+  .key-btn{background:var(--spcx);color:#000;border:none;border-radius:5px;padding:8px 18px;font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer}
+
+  .dual-grid{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .tf-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .tp-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)}
+  .tp-sym{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700}
+  .tp-sym.h1{color:var(--h1-accent)}
+  .tp-sym.h4{color:var(--h4-accent)}
+  .tp-sig{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:900;margin-left:auto}
+  .tp-sig.buy{color:var(--green)}
+  .tp-sig.sell{color:var(--red)}
+  .tp-sig.wait{color:var(--dim)}
+
+  .levels-strip{width:100%;max-width:980px;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .ls-cell{padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .ls-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+  .ls-icon.green{border:2px solid var(--green);color:var(--green)}
+  .ls-icon.red{border:2px solid var(--red);color:var(--red)}
+  .ls-icon.spcx{border:2px solid var(--spcx);color:var(--spcx)}
+
+  .btn{flex:1;padding:12px 0;border:none;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer}
+  .btn.long{background:var(--green);color:#000}
+  .btn.short{background:var(--red);color:#fff}
+
+  @media(max-width:680px){.dual-grid{grid-template-columns:1fr}}
+</style>
 </head>
-<body class="bg-gray-950 text-gray-200">
-    <div class="max-w-5xl mx-auto p-8">
-        
-        <!-- Header -->
-        <div class="flex items-center gap-4 mb-10 border-b border-gray-800 pb-8">
-            <i class="fa-solid fa-chart-line text-5xl text-orange-500"></i>
-            <div>
-                <h1 class="text-5xl font-bold">SPCXUSD Indicator</h1>
-                <p class="text-2xl text-orange-400">GMX Synthetic Perpetual Monitor</p>
-            </div>
-        </div>
+<body>
 
-        <div class="bg-gradient-to-r from-orange-900 to-gray-900 rounded-3xl p-10 mb-10 text-center">
-            <h2 class="text-4xl font-bold mb-3">🚀 SPCXUSD Live Performance Indicator</h2>
-            <p class="text-xl text-gray-300">TradingView Pine Script for GMX Pre-IPO SpaceX Synthetic</p>
-        </div>
+<div class="spcx-badge">
+  <div class="spcx-shield">🚀</div>
+  <div class="top-label">GMX SYNTHETICS • SPCXUSD</div>
+</div>
 
-        <!-- Pine Script -->
-        <div class="mb-12">
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
-                <i class="fa-solid fa-code"></i> 
-                TradingView Pine Script v5
-            </h2>
-            <pre class="code-block bg-zinc-950 p-8 rounded-3xl text-sm leading-relaxed text-emerald-300">
-//@version=5
-indicator("SPCXUSD - GMX Synthetic Monitor", shorttitle="SPCXUSD GMX", overlay=true, max_bars_back=1000)
+<div class="buy-sell-title"><span class="buy">BUY</span><span class="div">|</span><span class="sell">SELL</span></div>
+<div class="sub-label">⚡ SPCXUSD • PRE-IPO SPACEX SYNTHETIC PERPETUAL • H1 + H4 CONFLUENCE</div>
 
-// === INPUTS ===
-showEMA     = input.bool(true,  "Show EMA 50/200")
-showFunding = input.bool(true,  "Show Estimated Funding Rate")
-leverage    = input.int(10,     "Max Leverage", minval=1, maxval=50)
+<div class="tf-pills">
+  <div class="tf-pill h1">H1 • 1 HOUR</div>
+  <div class="tf-pill h4">H4 • 4 HOUR</div>
+  <div class="tf-pill conf">DUAL-TF CONFLUENCE</div>
+</div>
 
-// === PRICE DATA ===
-price = close
-ema50 = ta.ema(price, 50)
-ema200 = ta.ema(price, 200)
+<div class="conn-status connecting" id="connStatus">
+  <div class="conn-dot"></div>
+  <span id="connText">ENTER TWELVE DATA API KEY TO START</span>
+</div>
 
-// === MOMENTUM & STRENGTH ===
-rsi = ta.rsi(price, 14)
-mom = ta.mom(price, 10)
+<div class="signal-alert" id="signalAlert"></div>
 
-// === BACKGROUND COLOR ===
-bgColor = price > ema200 ? color.new(#22c55e, 90) : color.new(#ef4444, 90)
+<div class="key-bar">
+  <div class="key-label">TWELVE DATA KEY:</div>
+  <input class="key-inp" id="tdKey" type="password" placeholder="Paste your Twelve Data API key...">
+  <button class="key-btn" onclick="startFeed()">▶ START SPCXUSD LIVE FEED</button>
+</div>
 
-// === PLOTS ===
-plot(price,      title="SPCXUSD Price", color=color.white, linewidth=3)
-plot(showEMA ? ema50  : na, title="EMA 50",  color=color.orange, linewidth=2)
-plot(showEMA ? ema200 : na, title="EMA 200", color=color.blue,   linewidth=2)
+<div class="countdown-bar" id="countdownBar" style="display:none">
+  <div class="cd-label">REFRESH</div>
+  <div class="cd-block"><span class="cd-tf h1">H1</span><div class="cd-track"><div class="cd-fill h1" id="cdFill1" style="width:100%"></div></div><span class="cd-val h1" id="cdVal1">5m</span></div>
+  <div class="cd-block"><span class="cd-tf h4">H4</span><div class="cd-track"><div class="cd-fill h4" id="cdFill4" style="width:100%"></div></div><span class="cd-val h4" id="cdVal4">15m</span></div>
+</div>
 
-// Estimated Funding Rate (GMX-style)
-estFunding = (price - price[1]) / price * 100 * 8
-plot(showFunding ? estFunding : na, title="Est. Funding %", color=color.purple, style=plot.style_columns, linewidth=3)
-
-// === SHAPES & LABELS ===
-bgcolor(bgColor, title="Trend Background")
-
-plotshape(rsi > 70,  title="Overbought",  location=location.abovebar, color=color.red,   style=shape.triangledown, size=size.small)
-plotshape(rsi < 30,  title="Oversold",    location=location.belowbar, color=color.green, style=shape.triangleup,   size=size.small)
-
-// Alerts
-alertcondition(ta.crossover(price, ema50),  "Bullish Cross",  "SPCXUSD crossed above EMA50")
-alertcondition(ta.crossunder(price, ema200), "Bearish Cross", "SPCXUSD crossed below EMA200")
-
-// Info Table
-var table info = table.new(position.top_right, 2, 6, bgcolor=color.new(#1f2937, 80))
-if bar_index % 10 == 0
-    table.cell(info, 0, 0, "SPCXUSD", text_color=color.white)
-    table.cell(info, 1, 0, str.tostring(price, "#.##"), text_color=color.white)
-    table.cell(info, 0, 1, "RSI", text_color=color.white)
-    table.cell(info, 1, 1, str.tostring(rsi, "#.##"), text_color=rsi>70?color.red:rsi<30?color.green:color.white)
-    table.cell(info, 0, 2, "Est Funding", text_color=color.white)
-    table.cell(info, 1, 2, str.tostring(estFunding, "#.##") + "%", text_color=color.purple)
-    table.cell(info, 0, 3, "Trend", text_color=color.white)
-    table.cell(info, 1, 3, price > ema200 ? "BULLISH" : "BEARISH", text_color=price>ema200?color.green:color.red)
-            </pre>
-        </div>
-
-        <!-- How to Use -->
-        <div class="bg-gray-900 rounded-3xl p-8 mb-10">
-            <h3 class="font-bold text-2xl mb-6 text-orange-400">How to Add to TradingView</h3>
-            <ol class="list-decimal pl-6 space-y-4 text-gray-300">
-                <li>Go to <a href="https://www.tradingview.com/" class="text-orange-400 hover:underline">TradingView</a></li>
-                <li>Open Pine Editor (bottom of chart)</li>
-                <li>Delete everything and paste the code above</li>
-                <li>Click "Save" and name it "SPCXUSD GMX Synthetic"</li>
-                <li>Add to chart and search for SPCXUSD (use GMX or Crypto.com feed)</li>
-            </ol>
-        </div>
-
-        <!-- Notes -->
-        <div class="border border-orange-500/30 bg-orange-950/30 rounded-3xl p-8">
-            <h3 class="font-bold text-orange-400 mb-4 text-xl">SPCXUSD on GMX Notes</h3>
-            <ul class="space-y-3 text-sm">
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Max ~10x leverage</li>
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Synthetic perpetual using GMX Oracle</li>
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Watch funding rate for long-term positions</li>
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Limited initial Open Interest — trade carefully</li>
-            </ul>
-        </div>
-
-        <div class="text-center text-gray-500 mt-16 text-sm">
-            SPCXUSD GMX Synthetic Indicator • Generated June 2026
-        </div>
+<div class="conf-banner" id="confBanner">
+  <div class="conf-title">CONFLUENCE<br>SIGNAL</div>
+  <div class="conf-sig wait" id="confSig">WAIT ◆</div>
+  <div class="conf-detail">
+    <div class="conf-row">
+      <div class="conf-item"><div class="conf-lbl">H1 BIAS</div><div class="conf-val" id="h1bias">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">H4 BIAS</div><div class="conf-val" id="h4bias">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">H1 RSI</div><div class="conf-val" id="h1rsi">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">H4 RSI</div><div class="conf-val" id="h4rsi">--</div></div>
+      <div class="conf-item"><div class="conf-lbl">PRICE</div><div class="conf-val" id="confPrice">--</div></div>
     </div>
+  </div>
+  <div class="str-wrap">
+    <div class="str-lbl">CONFLUENCE STRENGTH</div>
+    <div class="str-row">
+      <div class="str-bg"><div class="str-bar" id="strBar" style="width:0%"></div></div>
+      <div class="str-pct" id="strPct">--</div>
+    </div>
+  </div>
+</div>
+
+<div class="dual-grid">
+  <!-- H1 -->
+  <div class="tf-panel h1-panel">
+    <div class="tp-header h1"><div class="tp-dot h1"></div><div class="tp-sym h1">SPCXUSD • H1</div><div class="tp-sig wait" id="h1sig">WAIT</div></div>
+    <div class="tp-body">
+      <div class="tp-stats h1">
+        <div class="sg"><div class="sl">EMA 9</div><div class="sv h1c" id="h1ema9">--</div></div>
+        <div class="sg"><div class="sl">EMA 21</div><div class="sv h1c" id="h1ema21">--</div></div>
+        <div class="sg"><div class="sl">RSI(14)</div><div class="sv" id="h1rsiV">--</div></div>
+        <div class="sg"><div class="sl">MACD</div><div class="sv" id="h1macd">--</div></div>
+        <div class="sg"><div class="sl">ATR(14)</div><div class="sv h1c" id="h1atr">--</div></div>
+      </div>
+      <div class="tp-chart"><canvas id="chartH1"></canvas></div>
+    </div>
+  </div>
+
+  <!-- H4 -->
+  <div class="tf-panel h4-panel">
+    <div class="tp-header h4"><div class="tp-dot h4"></div><div class="tp-sym h4">SPCXUSD • H4</div><div class="tp-sig wait" id="h4sig">WAIT</div></div>
+    <div class="tp-body">
+      <div class="tp-stats h4">
+        <div class="sg"><div class="sl">EMA 9</div><div class="sv h4c" id="h4ema9">--</div></div>
+        <div class="sg"><div class="sl">EMA 21</div><div class="sv h4c" id="h4ema21">--</div></div>
+        <div class="sg"><div class="sl">RSI(14)</div><div class="sv" id="h4rsiV">--</div></div>
+        <div class="sg"><div class="sl">MACD</div><div class="sv" id="h4macd">--</div></div>
+        <div class="sg"><div class="sl">ATR(14)</div><div class="sv h4c" id="h4atr">--</div></div>
+      </div>
+      <div class="tp-chart"><canvas id="chartH4"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="levels-strip">
+  <div class="ls-cell">
+    <div class="ls-icon green">↗</div>
+    <div class="ls-txt"><div class="bl">ENTRY</div><div class="bv green" id="b-entry">--</div></div>
+  </div>
+  <div class="ls-div"></div>
+  <div class="ls-cell">
+    <div class="ls-icon red">🛡</div>
+    <div class="ls-txt"><div class="bl">STOP LOSS</div><div class="bv red" id="b-stop">--</div></div>
+  </div>
+  <div class="ls-div"></div>
+  <div class="ls-cell">
+    <div class="ls-icon spcx">🎯</div>
+    <div class="ls-txt"><div class="bl">TAKE PROFIT</div><div class="bv spcx" id="b-target">--</div></div>
+  </div>
+</div>
+
+<div style="display:flex;gap:10px;width:100%;max-width:980px;margin-bottom:20px">
+  <button class="btn long" onclick="forceSignal('BUY')">▲ FORCE LONG</button>
+  <button class="btn short" onclick="forceSignal('SELL')">▼ FORCE SHORT</button>
+</div>
+
+<script>
+// ==================== FULL SCRIPT FOR SPCXUSD ====================
+const SYMBOL = "SPCX/USD";   // Change if Twelve Data uses different symbol
+const BASE_URL = "https://api.twelvedata.com";
+
+let apiKey = "", dataH1 = [], dataH4 = [], sigH1 = "WAIT", sigH4 = "WAIT", confSig = "WAIT", lastPrice = null, atrH4val = null;
+
+const el = id => document.getElementById(id);
+const set = (id, val) => { let e = el(id); if(e) e.textContent = val; };
+const fmt = (v, d=2) => (v==null||isNaN(v)) ? "--" : parseFloat(v).toFixed(d);
+
+function calcEMA(data, period) {
+  if (!data || data.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = data.slice(0, period).reduce((a,b)=>a+b,0) / period;
+  for (let i = period; i < data.length; i++) ema = data[i] * k + ema * (1 - k);
+  return ema;
+}
+
+function calcRSI(data, period=14) {
+  if (!data || data.length < period+1) return null;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    let change = data[data.length-i] - data[data.length-i-1];
+    if (change > 0) gains += change;
+    else losses -= change;
+  }
+  let rs = gains / losses;
+  return losses === 0 ? 100 : 100 - (100 / (1 + rs));
+}
+
+function calcATR(candles, period=14) {
+  if (!candles || candles.length < period+1) return null;
+  let trs = [];
+  for (let i = 1; i < candles.length; i++) {
+    let c = candles[i], p = candles[i-1];
+    trs.push(Math.max(c.high-c.low, Math.abs(c.high-p.close), Math.abs(c.low-p.close)));
+  }
+  return trs.slice(-period).reduce((a,b)=>a+b,0) / period;
+}
+
+async function fetchTF(interval, size) {
+  const url = `${BASE_URL}/time_series?symbol=${SYMBOL}&interval=${interval}&outputsize=${size}&apikey=${apiKey}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.status === "error") throw new Error(json.message || "API Error");
+  return json.values.reverse().map(v => ({
+    open: +v.open, high: +v.high, low: +v.low, close: +v.close,
+    bull: +v.close >= +v.open
+  }));
+}
+
+function computeTF(candles, prefix) {
+  if (!candles || candles.length < 30) return "WAIT";
+  const closes = candles.map(c => c.close);
+  const ema9 = calcEMA(closes, 9);
+  const ema21 = calcEMA(closes, 21);
+  const rsi = calcRSI(closes);
+  const atr = calcATR(candles);
+
+  set(`${prefix}ema9`, fmt(ema9));
+  set(`${prefix}ema21`, fmt(ema21));
+  set(`${prefix}rsiV`, fmt(rsi,1));
+  set(`${prefix}atr`, fmt(atr));
+
+  const bullish = ema9 > ema21;
+  let signal = "WAIT";
+  if (bullish && rsi > 40 && rsi < 75) signal = "BUY";
+  if (!bullish && rsi > 25 && rsi < 60) signal = "SELL";
+
+  // Update UI
+  set(`${prefix}bias`, bullish ? "▲ BULL" : "▼ BEAR");
+  el(`${prefix}bias`).style.color = bullish ? "var(--green)" : "var(--red)";
+  el(`${prefix}sig`).textContent = signal;
+  el(`${prefix}sig`).className = signal === "BUY" ? "tp-sig buy" : signal === "SELL" ? "tp-sig sell" : "tp-sig wait";
+
+  if (prefix === "h4") atrH4val = atr;
+  return signal;
+}
+
+function updateConfluence() {
+  let strength = 20;
+  let newSig = "WAIT";
+
+  if (sigH1 === "BUY" && sigH4 === "BUY") { newSig = "BUY"; strength = 92; }
+  else if (sigH1 === "SELL" && sigH4 === "SELL") { newSig = "SELL"; strength = 92; }
+  else if (sigH1 === "BUY" || sigH4 === "BUY") { newSig = "BUY"; strength = 55; }
+  else if (sigH1 === "SELL" || sigH4 === "SELL") { newSig = "SELL"; strength = 55; }
+
+  confSig = newSig;
+  el("confSig").textContent = newSig === "BUY" ? "BUY ▲" : newSig === "SELL" ? "SELL ▼" : "WAIT ◆";
+  el("confSig").className = newSig === "BUY" ? "conf-sig buy" : newSig === "SELL" ? "conf-sig sell" : "conf-sig wait";
+  el("strBar").style.width = strength + "%";
+  set("strPct", strength + "%");
+
+  if (newSig !== "WAIT" && lastPrice) {
+    const atr = atrH4val || lastPrice * 0.015;
+    set("b-entry", "$" + fmt(lastPrice,3));
+    set("b-stop", "$" + fmt(lastPrice - atr * 1.8 * (newSig==="BUY"?1:-1), 3));
+    set("b-target", "$" + fmt(lastPrice + atr * 3.6 * (newSig==="BUY"?1:-1), 3));
+  }
+}
+
+async function startFeed() {
+  apiKey = el("tdKey").value.trim();
+  if (!apiKey) { alert("Please enter your Twelve Data API Key"); return; }
+
+  el("connStatus").className = "conn-status connecting";
+  el("connText").textContent = "LOADING SPCXUSD...";
+
+  try {
+    dataH1 = await fetchTF("1h", 120);
+    dataH4 = await fetchTF("4h", 80);
+    lastPrice = dataH1[dataH1.length-1].close;
+
+    set("confPrice", "$" + fmt(lastPrice,3));
+    sigH1 = computeTF(dataH1, "h1");
+    sigH4 = computeTF(dataH4, "h4");
+    updateConfluence();
+
+    el("connStatus").className = "conn-status connected";
+    el("connText").textContent = "LIVE • SPCXUSD • GMX SYNTHETIC";
+  } catch(e) {
+    el("connText").textContent = "ERROR: " + e.message;
+  }
+}
+
+function forceSignal(type) {
+  if (!lastPrice) return;
+  const atr = atrH4val || lastPrice * 0.015;
+  set("b-entry", "$" + fmt(lastPrice,3));
+  set("b-stop", "$" + fmt(lastPrice - atr*1.8*(type==="BUY"?1:-1),3));
+  set("b-target", "$" + fmt(lastPrice + atr*3.6*(type==="BUY"?1:-1),3));
+}
+
+// Canvas drawing functions (simplified)
+function drawChart(canvasId, data, color) {
+  const canvas = el(canvasId);
+  if (!canvas || !data) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 180;
+  ctx.fillStyle = "#090d1c";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Simple price line
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  const max = Math.max(...data.map(d=>d.high));
+  const min = Math.min(...data.map(d=>d.low));
+  data.slice(-40).forEach((c,i) => {
+    const x = i * (canvas.width/40);
+    const y = canvas.height - ((c.close - min) / (max - min || 1)) * canvas.height * 0.9;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+setInterval(() => { drawChart("chartH1", dataH1, "#00d4ff"); drawChart("chartH4", dataH4, "#aa44ff"); }, 5000);
+
+window.startFeed = startFeed;
+window.forceSignal = forceSignal;
+</script>
 </body>
 </html>
