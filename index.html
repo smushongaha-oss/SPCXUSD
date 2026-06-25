@@ -8,56 +8,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
-        .code-block { font-family: ui-monospace, monospace; }
+        .code-block { 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
+            white-space: pre-wrap;
+        }
+        pre {
+            overflow-x: auto;
+        }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-200">
-    <div class="max-w-4xl mx-auto p-8">
+    <div class="max-w-5xl mx-auto p-8">
         <!-- Header -->
-        <div class="flex items-center gap-4 mb-8 border-b border-gray-800 pb-6">
-            <i class="fa-solid fa-rocket text-4xl text-orange-500"></i>
+        <div class="flex items-center gap-4 mb-10 border-b border-gray-800 pb-8">
+            <i class="fa-solid fa-rocket text-5xl text-orange-500"></i>
             <div>
-                <h1 class="text-4xl font-bold">GMX Synthetics</h1>
-                <p class="text-xl text-orange-400">SPCXUSD Market Configuration</p>
+                <h1 class="text-5xl font-bold tracking-tight">GMX Synthetics</h1>
+                <p class="text-2xl text-orange-400 mt-1">SPCXUSD Market Configuration</p>
             </div>
         </div>
 
-        <div class="bg-gray-900 rounded-2xl p-8 mb-8">
-            <h2 class="text-3xl font-bold mb-2 flex items-center gap-3">
-                <span class="text-emerald-400">🚀</span> SPCXUSD Synthetic Perpetual
+        <div class="bg-gradient-to-r from-orange-900 to-gray-900 rounded-3xl p-10 mb-10 text-center">
+            <h2 class="text-4xl font-bold mb-3 flex items-center justify-center gap-4">
+                <span class="text-emerald-400">🚀</span> 
+                SPCXUSD Synthetic Perpetual
             </h2>
-            <p class="text-gray-400">Pre-IPO SpaceX Exposure • Max ~10x Leverage • Arbitrum + Avalanche</p>
+            <p class="text-xl text-gray-300">Pre-IPO SpaceX Exposure • Max 10x Leverage • Arbitrum + Avalanche</p>
         </div>
 
         <!-- Quick Start -->
         <div class="mb-12">
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><i class="fa-solid fa-bolt"></i> Quick Start</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-gray-900 p-6 rounded-xl">
-                    <h3 class="font-semibold mb-4 text-orange-400">1. Clone & Setup</h3>
-                    <pre class="code-block bg-black p-4 rounded-lg text-sm overflow-x-auto">git clone https://github.com/YOUR-USERNAME/gmx-synthetics.git
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
+                <i class="fa-solid fa-bolt text-yellow-400"></i> Quick Start
+            </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-900 p-7 rounded-2xl">
+                    <h3 class="text-orange-400 font-semibold text-lg mb-4">1. Clone Repository</h3>
+                    <pre class="code-block bg-black p-5 rounded-xl text-sm text-emerald-300">git clone https://github.com/YOUR-USERNAME/gmx-synthetics.git
 cd gmx-synthetics
 npm install
 npx hardhat compile</pre>
                 </div>
-                <div class="bg-gray-900 p-6 rounded-xl">
-                    <h3 class="font-semibold mb-4 text-orange-400">2. Add SPCXUSD</h3>
-                    <p class="text-sm text-gray-400">Update <code class="bg-black px-1 rounded">config/tokens.ts</code> and <code class="bg-black px-1 rounded">config/markets.ts</code></p>
+                <div class="bg-gray-900 p-7 rounded-2xl">
+                    <h3 class="text-orange-400 font-semibold text-lg mb-4">2. Add SPCXUSD</h3>
+                    <p class="text-gray-400">Update <code class="bg-gray-800 px-2 py-1 rounded">config/tokens.ts</code> and <code class="bg-gray-800 px-2 py-1 rounded">config/markets.ts</code></p>
                 </div>
             </div>
         </div>
 
-        <!-- SPCX Token Config -->
+        <!-- Token Config -->
         <div class="mb-12">
-            <h2 class="text-2xl font-bold mb-6">1. Add SPCX Token — <code class="text-orange-400">config/tokens.ts</code></h2>
-            <pre class="code-block bg-black p-6 rounded-2xl text-sm overflow-x-auto leading-relaxed text-emerald-300">
+            <h2 class="text-3xl font-bold mb-6">1. Add SPCX Token — <span class="text-orange-400">config/tokens.ts</span></h2>
+            <pre class="code-block bg-zinc-950 p-8 rounded-3xl text-sm leading-relaxed text-emerald-300 overflow-x-auto">
 SPCX: {
   name: "SPCX",
   symbol: "SPCX",
   decimals: 18,
-  address: "0x0000000000000000000000000000000000000000", // synthetic
+  address: "0x0000000000000000000000000000000000000000", // synthetic token
   synthetic: true,
-  dataStreamFeedId: "0xYOUR_ACTUAL_SPCX_DATASTREAM_FEED_ID", 
+  dataStreamFeedId: "0xYOUR_ACTUAL_SPCX_DATASTREAM_FEED_ID_HERE",
   dataStreamFeedDecimals: 18,
   oracleTimestampAdjustment: 1,
   isStable: false,
@@ -66,10 +75,10 @@ SPCX: {
 },</pre>
         </div>
 
-        <!-- Full SPCXUSD Market Config -->
+        <!-- Market Config -->
         <div class="mb-12">
-            <h2 class="text-2xl font-bold mb-6">2. Add SPCXUSD Market — <code class="text-orange-400">config/markets.ts</code></h2>
-            <pre class="code-block bg-black p-6 rounded-2xl text-sm overflow-x-auto leading-relaxed text-sky-300">
+            <h2 class="text-3xl font-bold mb-6">2. Add SPCXUSD Market — <span class="text-orange-400">config/markets.ts</span></h2>
+            <pre class="code-block bg-zinc-950 p-8 rounded-3xl text-sm leading-relaxed text-sky-300 overflow-x-auto">
 {
   tokens: {
     indexToken: "SPCX",
@@ -83,7 +92,7 @@ SPCX: {
   ...fundingRateConfig_Default,
   ...borrowingRateConfig_HighMax_WithHigherBase,
 
-  // SPCX Specific Parameters
+  // === SPCX Specific Parameters ===
   negativePositionImpactFactor: exponentToFloat("5e-10"),
   positivePositionImpactFactor: exponentToFloat("2.5e-10"),
   negativePositionImpactExponentFactor: exponentToFloat("2.2e0"),
@@ -111,25 +120,25 @@ SPCX: {
         </div>
 
         <!-- Deployment -->
-        <div class="bg-gray-900 rounded-2xl p-8 mb-12">
-            <h2 class="text-2xl font-bold mb-6">Deployment Command</h2>
-            <pre class="code-block bg-black p-5 rounded-xl">npx hardhat run scripts/deployContracts.ts --network arbitrum</pre>
-            <p class="mt-4 text-sm text-gray-400">Don't forget to create <code>.env</code> with your RPC and private key.</p>
+        <div class="bg-gray-900 rounded-3xl p-10 mb-12">
+            <h2 class="text-3xl font-bold mb-6">Deployment</h2>
+            <pre class="code-block bg-black p-6 rounded-2xl text-lg">npx hardhat run scripts/deployContracts.ts --network arbitrum</pre>
+            <p class="mt-6 text-gray-400">Create a <code class="bg-black px-2 py-1 rounded">.env</code> file with your RPC URLs and private key before deploying.</p>
         </div>
 
-        <!-- Final Notes -->
-        <div class="border border-orange-500/30 bg-orange-950/30 rounded-2xl p-8">
-            <h3 class="font-bold text-orange-400 mb-4">Important Notes</h3>
-            <ul class="space-y-3 text-sm">
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Replace <code>YOUR_ACTUAL_SPCX_DATASTREAM_FEED_ID</code> with real oracle feed from GMX keepers</li>
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Start with low maxOpenInterest and increase via governance</li>
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Test thoroughly on testnet before mainnet</li>
-                <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> This config follows GMX's current synthetic market pattern (June 2026)</li>
+        <!-- Notes -->
+        <div class="border border-orange-500/30 bg-orange-950/30 rounded-3xl p-10">
+            <h3 class="font-bold text-2xl text-orange-400 mb-6">Important Notes</h3>
+            <ul class="space-y-4 text-gray-300">
+                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Replace <code>YOUR_ACTUAL_SPCX_DATASTREAM_FEED_ID_HERE</code> with the real GMX oracle feed ID</li>
+                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Start with low maxOpenInterest and increase gradually via governance</li>
+                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Test on testnet / fork before mainnet</li>
+                <li class="flex gap-4"><i class="fa-solid fa-check text-emerald-400 mt-1"></i>Config follows official GMX synthetic market pattern (June 2026)</li>
             </ul>
         </div>
 
-        <div class="text-center text-gray-500 mt-12 text-sm">
-            Generated for GitHub • SPCXUSD Market • June 2026
+        <div class="text-center text-gray-500 mt-16">
+            Generated for GitHub • SPCXUSD Synthetic Market • June 2026
         </div>
     </div>
 </body>
