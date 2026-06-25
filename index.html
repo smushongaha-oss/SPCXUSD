@@ -62,6 +62,21 @@
   .price-label{font-size:0.7rem;color:var(--dim);letter-spacing:0.1em}
   .price-value{font-family:'Share Tech Mono',monospace;font-size:1.2rem;color:var(--blue)}
 
+  .chart-grid{
+    width:100%;max-width:800px;display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px
+  }
+  .chart-panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden
+  }
+  .chart-header{
+    padding:10px 12px;background:#090c1e;border-bottom:1px solid var(--border);
+    font-family:'Orbitron',sans-serif;font-size:0.85rem;color:var(--blue)
+  }
+  .chart-container{
+    height:280px;padding:10px;background:var(--bg);position:relative
+  }
+  .chart-container canvas{width:100% !important;height:100% !important;display:block}
+
   .ai-analysis{
     width:100%;max-width:800px;background:var(--panel);border:1px solid var(--border);
     border-radius:10px;overflow:hidden;margin-bottom:15px
@@ -72,17 +87,17 @@
   }
   .ai-header-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;color:var(--blue);letter-spacing:0.1em}
   .ai-status{font-size:0.7rem;color:var(--dim);margin-left:auto}
-  .ai-content{padding:15px;min-height:150px;font-size:0.95rem;line-height:1.7;white-space:pre-wrap}
+  .ai-content{padding:15px;min-height:120px;font-size:0.95rem;line-height:1.7;white-space:pre-wrap}
   .ai-content.loading{color:var(--dim);font-style:italic}
   .ai-content.error{color:var(--red)}
 
-  .controls{width:100%;max-width:800px;display:flex;gap:10px}
+  .controls{width:100%;max-width:800px;display:flex;gap:10px;margin-bottom:15px}
   .controls button{flex:1}
 
   .live-feed{
     width:100%;max-width:800px;background:var(--panel);border:1px solid var(--border);
     border-radius:10px;padding:12px;margin-bottom:15px;font-family:'Share Tech Mono',monospace;
-    font-size:0.75rem;color:var(--dim);max-height:200px;overflow-y:auto
+    font-size:0.75rem;color:var(--dim);max-height:150px;overflow-y:auto
   }
   .feed-line{padding:3px 0;border-bottom:1px solid #14223a22}
   .feed-line.buy{color:var(--green)}
@@ -94,6 +109,7 @@
     .main-signal{padding:15px}
     .signal-strength{font-size:2rem}
     .price-row{gap:10px}
+    .chart-grid{grid-template-columns:1fr}
   }
 </style>
 </head>
@@ -138,6 +154,22 @@
   </div>
 </div>
 
+<!-- CHARTS -->
+<div class="chart-grid">
+  <div class="chart-panel">
+    <div class="chart-header">📊 H1 · 1 HOUR</div>
+    <div class="chart-container">
+      <canvas id="chartH1"></canvas>
+    </div>
+  </div>
+  <div class="chart-panel">
+    <div class="chart-header">📊 H4 · 4 HOUR</div>
+    <div class="chart-container">
+      <canvas id="chartH4"></canvas>
+    </div>
+  </div>
+</div>
+
 <!-- AI ANALYSIS -->
 <div class="ai-analysis">
   <div class="ai-header">
@@ -170,6 +202,7 @@
   let dataH1 = [], dataH4 = [];
   let lastPrice = null, sigH1 = 'WAIT', sigH4 = 'WAIT', confSig = 'WAIT';
   let pollTimer = null;
+  let chartH1Instance = null, chartH4Instance = null;
 
   function log(msg, type='info'){
     const feed = el('liveFeed');
@@ -178,7 +211,7 @@
     line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
     feed.appendChild(line);
     feed.scrollTop = feed.scrollHeight;
-    if(feed.children.length > 50) feed.removeChild(feed.firstChild);
+    if(feed.children.length > 40) feed.removeChild(feed.firstChild);
   }
 
   function calcEMA(data, period){
@@ -204,18 +237,82 @@
     return (ema12 && ema26) ? ema12 - ema26 : null;
   }
 
+  function drawChart(data, canvasId, title){
+    const ctx = el(canvasId);
+    if(!ctx) return;
+
+    // Use last 30 candles
+    const displayData = data.slice(-30);
+    const labels = displayData.map((_, i) => i+1);
+
+    // Destroy old chart
+    if(canvasId === 'chartH1' && chartH1Instance) chartH1Instance.destroy();
+    if(canvasId === 'chartH4' && chartH4Instance) chartH4Instance.destroy();
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'SPCX/USD',
+          data: displayData.map(c => c.close),
+          backgroundColor: displayData.map(c => c.close >= c.open ? '#00e5b044' : '#ff2d5544'),
+          borderColor: displayData.map(c => c.close >= c.open ? '#00e5b0' : '#ff2d55'),
+          borderWidth: 1,
+          borderRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: {
+              color: '#3d5a7a',
+              font: { size: 10 },
+              callback: function(value) { return '$' + value.toFixed(0); }
+            },
+            grid: {
+              color: '#14223a',
+              drawBorder: false
+            }
+          },
+          x: {
+            ticks: {
+              color: '#3d5a7a',
+              font: { size: 9 }
+            },
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+
+    if(canvasId === 'chartH1') chartH1Instance = chart;
+    if(canvasId === 'chartH4') chartH4Instance = chart;
+  }
+
   async function fetchBinance(symbol, interval='1h'){
     try{
       const limit = interval === '1h' ? 100 : 96;
       const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
       const resp = await fetch(url);
       const data = await resp.json();
+      
       if(!Array.isArray(data)) throw new Error('Invalid response');
+      
       return data.map(k => ({
         open: parseFloat(k[1]),
         high: parseFloat(k[2]),
         low: parseFloat(k[3]),
         close: parseFloat(k[4]),
+        volume: parseFloat(k[7]),
         time: k[0]
       }));
     }catch(e){
@@ -227,6 +324,7 @@
   async function updateData(){
     try{
       const symbol = el('binanceSymbol').value || 'SPXUSD';
+      
       [dataH1, dataH4] = await Promise.all([
         fetchBinance(symbol, '1h'),
         fetchBinance(symbol, '4h')
@@ -236,6 +334,10 @@
 
       lastPrice = dataH1[dataH1.length-1].close;
       set('curPrice', '$' + fmt(lastPrice, 2));
+
+      // Draw charts
+      drawChart(dataH1, 'chartH1', 'H1');
+      drawChart(dataH4, 'chartH4', 'H4');
 
       const h1closes = dataH1.map(c=>c.close);
       const h4closes = dataH4.map(c=>c.close);
@@ -262,7 +364,7 @@
       else confSig = 'WAIT';
 
       updateSignalDisplay();
-      log(`Data: H1=${sigH1} H4=${sigH4} Price=${fmt(lastPrice,2)}`, 'info');
+      log(`Updated: H1=${sigH1} H4=${sigH4} Price=${fmt(lastPrice,2)}`, 'info');
 
     }catch(e){
       log(`Update failed: ${e.message}`, 'error');
@@ -292,13 +394,30 @@
       const h1closes = dataH1.map(c=>c.close);
       const h4closes = dataH4.map(c=>c.close);
 
-      const prompt = `Analyze SPCX/USD confluence signal.
-Price: $${fmt(lastPrice,2)}
-H1: EMA9=${fmt(calcEMA(h1closes,9),2)}, EMA21=${fmt(calcEMA(h1closes,21),2)}, RSI=${fmt(calcRSI(h1closes),1)}, Signal=${sigH1}
-H4: EMA9=${fmt(calcEMA(h4closes,9),2)}, EMA21=${fmt(calcEMA(h4closes,21),2)}, RSI=${fmt(calcRSI(h4closes),1)}, Signal=${sigH4}
-Confluence: ${confSig}
+      const h1ema9 = calcEMA(h1closes, 9);
+      const h1ema21 = calcEMA(h1closes, 21);
+      const h1rsi = calcRSI(h1closes, 14);
+      const h4ema9 = calcEMA(h4closes, 9);
+      const h4ema21 = calcEMA(h4closes, 21);
+      const h4rsi = calcRSI(h4closes, 14);
 
-Provide concise trading analysis and recommendation (3-4 sentences max). Focus on entry, stop loss, target.`;
+      const prompt = `Analyze SPCX/USD confluence trading signal:
+
+Current Price: $${fmt(lastPrice,2)}
+
+H1 (1-hour):
+- EMA9: ${fmt(h1ema9,2)}, EMA21: ${fmt(h1ema21,2)}
+- RSI: ${fmt(h1rsi,1)}
+- Signal: ${sigH1}
+
+H4 (4-hour):
+- EMA9: ${fmt(h4ema9,2)}, EMA21: ${fmt(h4ema21,2)}
+- RSI: ${fmt(h4rsi,1)}
+- Signal: ${sigH4}
+
+Confluence Signal: ${confSig}
+
+Provide a 3-4 sentence trading recommendation. Include: 1) Confirmation of the signal, 2) Entry level, 3) Stop loss, 4) Target.`;
 
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -321,7 +440,7 @@ Provide concise trading analysis and recommendation (3-4 sentences max). Focus o
       aiContent.textContent = analysis;
       aiContent.className = 'ai-content';
       aiStatus.textContent = 'Ready';
-      log('Groq analysis complete', 'buy');
+      log('✓ Groq analysis complete', 'buy');
 
     }catch(e){
       aiContent.textContent = '❌ ' + e.message;
@@ -343,16 +462,16 @@ Provide concise trading analysis and recommendation (3-4 sentences max). Focus o
 
     if(pollTimer) clearInterval(pollTimer);
 
-    log('Connecting to Binance...', 'info');
+    log('🔄 Connecting to Binance...', 'info');
     await updateData();
     await runAnalysis();
 
     pollTimer = setInterval(async () => {
       await updateData();
       await runAnalysis();
-    }, 60000); // 1 min
+    }, 60000); // Refresh every 1 minute
 
-    log('Live feed active - refreshing every 1m', 'buy');
+    log('✓ Live feed active - refreshing every 1 minute', 'buy');
   }
   window.initFeed = initFeed;
 
