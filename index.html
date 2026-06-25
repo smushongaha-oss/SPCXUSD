@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOCUS AUTO TRADERS · SPCX/USD · H1 + H4 · Twelve Data</title>
+<title>FOCUS AUTO TRADERS · SPCX/USD · H1 + H4 · Groq AI</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
@@ -204,12 +204,11 @@
 <div class="signal-alert" id="signalAlert"></div>
 
 <div class="key-bar">
-  <div class="key-label">TWELVE DATA KEY:</div>
-  <input class="key-inp" id="tdKey" type="password" placeholder="Paste your free Twelve Data API key...">
+  <div class="key-label">API KEY:</div>
+  <input class="key-inp" id="tdKey" type="password" placeholder="Paste your API key...">
   <button class="key-btn" onclick="startFeed()">▶ START H1 + H4 FEED</button>
   <div class="key-hint">
-    Free plan at <a href="https://twelvedata.com/apikey" target="_blank">twelvedata.com/apikey</a>
-    · H1 refreshes every 5 min · H4 refreshes every 15 min · SPCX/USD pair
+    H1 refreshes every 5 min · H4 refreshes every 15 min · SPCX/USD pair
   </div>
 </div>
 
@@ -305,7 +304,7 @@
   <div class="tk"><div class="tk-l">H4 HIGH</div><div class="tk-v" style="color:var(--green)" id="tk-h4hi">--</div></div>
   <div class="tk"><div class="tk-l">H4 LOW</div><div class="tk-v" style="color:var(--red)" id="tk-h4lo">--</div></div>
   <div class="tk"><div class="tk-l">H1 CHANGE</div><div class="tk-v" id="tk-chg">--</div></div>
-  <div class="tk"><div class="tk-l">SOURCE</div><div class="tk-v" style="color:var(--spcx)">TWELVE DATA</div></div>
+  <div class="tk"><div class="tk-l">SOURCE</div><div class="tk-v" style="color:var(--spcx)">LIVE FEED</div></div>
   <div class="tk"><div class="tk-l">STATUS</div><div class="tk-v" style="color:var(--spcx)" id="tk-status">OFFLINE</div></div>
 </div>
 
@@ -746,7 +745,7 @@
 
       const prompt=`You are an expert cryptocurrency technical analyst specializing in multi-timeframe analysis. Analyze this LIVE SPCX/USD dual-timeframe data:
 
-SOURCE: Twelve Data REST API · Symbol: SPCX/USD
+SYMBOL: SPCX/USD
 
 CURRENT PRICE: $${fmt(lastPrice,3)}
 
