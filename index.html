@@ -198,17 +198,17 @@
 
 <div class="conn-status connecting" id="connStatus">
   <div class="conn-dot"></div>
-  <span id="connText">ENTER API KEY TO START</span>
+  <span id="connText">ENTER CRYPTO API KEY TO START</span>
 </div>
 
 <div class="signal-alert" id="signalAlert"></div>
 
 <div class="key-bar">
-  <div class="key-label">API KEY:</div>
-  <input class="key-inp" id="tdKey" type="password" placeholder="Paste your API key...">
+  <div class="key-label">COINGECKO API KEY:</div>
+  <input class="key-inp" id="apiKey" type="password" placeholder="Paste your CoinGecko API key...">
   <button class="key-btn" onclick="startFeed()">▶ START H1 + H4 FEED</button>
   <div class="key-hint">
-    H1 refreshes every 5 min · H4 refreshes every 15 min · SPCX/USD pair
+    H1 refreshes every 5 min · H4 refreshes every 15 min · SPCX/USD pair · <a href="https://www.coingecko.com/en/api" target="_blank">Get free API key</a>
   </div>
 </div>
 
@@ -363,12 +363,10 @@
 (function(){
 
   // ── CONFIG ──
-  const SYMBOL   = 'SPCX/USD';
-  const BASE_URL = 'https://api.twelvedata.com';
-  const REFRESH_H1 = 5 * 60 * 1000;    // 5 min
-  const REFRESH_H4 = 15 * 60 * 1000;   // 15 min
-  const SIZE_H1  = 100;
-  const SIZE_H4  = 80;
+  const SYMBOL   = 'spcx';  // CoinGecko ID
+  const VS_CURRENCY = 'usd';
+  const REFRESH_H1 = 60 * 1000;      // 1 minute (demo - adjust to 5 min for production)
+  const REFRESH_H4 = 4 * 60 * 1000;  // 4 minutes (demo - adjust to 15 min for production)
 
   // ── STATE ──
   let apiKey      = '';
@@ -446,18 +444,28 @@
     return (e12&&e26)?e12-e26:null;
   }
 
-  // ── FETCH ONE TF ──
-  async function fetchTF(interval, outputsize){
-    const url=`${BASE_URL}/time_series?symbol=${encodeURIComponent(SYMBOL)}&interval=${interval}&outputsize=${outputsize}&apikey=${apiKey}`;
-    const resp=await fetch(url);
-    const data=await resp.json();
-    if(data.status==='error'||data.code) throw new Error(data.message||'API error');
-    if(!data.values||data.values.length===0) throw new Error('No data returned');
-    return [...data.values].reverse().map(v=>({
-      open:parseFloat(v.open),high:parseFloat(v.high),
-      low:parseFloat(v.low),close:parseFloat(v.close),
-      date:v.datetime, bull:parseFloat(v.close)>=parseFloat(v.open)
-    }));
+  // ── FETCH COINGECKO DATA ──
+  async function fetchPriceData(days=90){
+    try{
+      const url = `https://api.coingecko.com/api/v3/coins/${SYMBOL}/market_chart?vs_currency=${VS_CURRENCY}&days=${days}&interval=hourly`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      
+      if(!data.prices || data.prices.length===0) throw new Error('No price data');
+      
+      // Convert to OHLC format (simulate from minute data)
+      return data.prices.map((p,i)=>({
+        timestamp: p[0],
+        open: p[1],
+        close: p[1],
+        high: p[1] * 1.001,
+        low: p[1] * 0.999,
+        bull: i===0 || p[1] >= data.prices[i-1][1]
+      }));
+    } catch(e){
+      console.error('CoinGecko fetch error:', e.message);
+      throw e;
+    }
   }
 
   // ── COMPUTE ONE TF ──
@@ -494,7 +502,7 @@
 
     if(prefix==='h4') atrH4val=atr14;
 
-    // Signal logic (wider bands for crypto)
+    // Signal logic
     let sig='WAIT';
     if(bullish && macdBull && rsi>38 && rsi<72) sig='BUY';
     if(!bullish && macdBear && rsi>28 && rsi<62) sig='SELL';
@@ -530,7 +538,6 @@
 
     confSig=newConf;
 
-    // Update confluence UI
     const cSigEl=el('confSig');
     if(cSigEl){
       cSigEl.textContent=newConf==='BUY'?'BUY ▲':newConf==='SELL'?'SELL ▼':'WAIT ◆';
@@ -539,19 +546,16 @@
     if(el('strBar')) el('strBar').style.width=strength+'%';
     set('strPct', strength+'%');
 
-    // H1/H4 individual sig badges
     const s1=el('h1sig');
     if(s1){s1.textContent=sigH1;s1.className=sigH1==='BUY'?'tp-sig buy':sigH1==='SELL'?'tp-sig sell':'tp-sig wait';}
     const s4=el('h4sig');
     if(s4){s4.textContent=sigH4;s4.className=sigH4==='BUY'?'tp-sig buy':sigH4==='SELL'?'tp-sig sell':'tp-sig wait';}
 
-    // Apply trade levels if signal
     if(newConf!=='WAIT' && lastPrice){
       const atr=atrH4val||lastPrice*0.01;
       applyLevels(newConf, lastPrice, atr);
     }
 
-    // Flash alert on state change
     flashAlert(newConf, lastPrice, atrH4val);
   }
 
@@ -602,12 +606,10 @@
     const parent = c.parentElement;
     if(!parent) return;
     
-    // Get real dimensions from parent
     const rect = parent.getBoundingClientRect();
     const w = Math.max(100, rect.width);
     const h = Math.max(100, rect.height);
     
-    // Set canvas size
     c.width = w;
     c.height = h;
   }
@@ -618,11 +620,9 @@
     const ctx=c.getContext('2d');
     const W=c.width, H=c.height;
     
-    // Fill background
     ctx.fillStyle='#090d1c'; 
     ctx.fillRect(0,0,W,H);
     
-    // Grid lines
     ctx.strokeStyle='#14223a'; 
     ctx.lineWidth=0.4;
     for(let i=0;i<=4;i++){
@@ -643,7 +643,6 @@
     const pad=0.06;
     const sY=v=>H*(1-pad)-((v-minP)/range)*H*(1-2*pad);
 
-    // Draw candles
     disp.forEach((c,i)=>{
       const x=i*cW+cW/2;
       ctx.strokeStyle=c.bull?'#00e5b0':'#ff2d55'; 
@@ -659,7 +658,6 @@
       ctx.fillRect(x-cW*0.35,top,cW*0.7,bH);
     });
 
-    // Price line
     if(lastPrice!==null){
       const yP=sY(lastPrice);
       ctx.strokeStyle=accent; 
@@ -691,7 +689,8 @@
   // ── FETCH H1 ──
   async function fetchH1(){
     try{
-      dataH1 = await fetchTF('1h', SIZE_H1);
+      const allData = await fetchPriceData(90);
+      dataH1 = allData.slice(-60);  // Last 60 candles (~60 hours)
       lastPrice = dataH1[dataH1.length-1].close;
       set('confPrice','$'+fmt(lastPrice,3));
       set('tk-price','$'+fmt(lastPrice,3));
@@ -707,13 +706,15 @@
       cd1Rem = REFRESH_H1/1000;
     }catch(e){
       console.error('H1 fetch error:',e.message);
+      setConn('error','H1 FETCH FAILED');
     }
   }
 
   // ── FETCH H4 ──
   async function fetchH4(){
     try{
-      dataH4 = await fetchTF('4h', SIZE_H4);
+      const allData = await fetchPriceData(365);
+      dataH4 = allData.slice(-96);  // Last 96 candles (~96 hours = 4 days)
       set('tk-h4hi', fmt(Math.max(...dataH4.map(c=>c.high)),3));
       set('tk-h4lo', fmt(Math.min(...dataH4.map(c=>c.low)),3));
       sigH4 = computeTF(dataH4,'h4');
@@ -722,38 +723,41 @@
       cd4Rem = REFRESH_H4/1000;
     }catch(e){
       console.error('H4 fetch error:',e.message);
+      setConn('error','H4 FETCH FAILED');
     }
   }
 
   // ── START ──
   async function startFeed(){
-    apiKey = el('tdKey')?.value?.trim();
+    apiKey = el('apiKey')?.value?.trim();
     if(!apiKey){ setConn('error','ENTER API KEY FIRST'); return; }
+
     if(pollH1) clearInterval(pollH1);
     if(pollH4) clearInterval(pollH4);
 
     setConn('connecting','LOADING SPCX/USD H1 + H4...');
     set('tk-status','LOADING');
 
-    // Initial fetch both
-    await Promise.all([fetchH1(), fetchH4()]);
-    updateConfluence();
-
-    setConn('connected','LIVE · SPCX/USD H1+H4 · AUTO-REFRESH');
-    set('tk-status','LIVE');
-    startCountdowns();
-
-    // Poll H1 every 5 min
-    pollH1 = setInterval(async()=>{
-      await fetchH1();
+    try {
+      await Promise.all([fetchH1(), fetchH4()]);
       updateConfluence();
-    }, REFRESH_H1);
 
-    // Poll H4 every 15 min
-    pollH4 = setInterval(async()=>{
-      await fetchH4();
-      updateConfluence();
-    }, REFRESH_H4);
+      setConn('connected','LIVE · SPCX/USD H1+H4 · AUTO-REFRESH');
+      set('tk-status','LIVE');
+      startCountdowns();
+
+      pollH1 = setInterval(async()=>{
+        await fetchH1();
+        updateConfluence();
+      }, REFRESH_H1);
+
+      pollH4 = setInterval(async()=>{
+        await fetchH4();
+        updateConfluence();
+      }, REFRESH_H4);
+    } catch(e) {
+      setConn('error', 'FAILED TO LOAD DATA: ' + e.message);
+    }
   }
   window.startFeed=startFeed;
 
@@ -800,7 +804,7 @@ TRADE LEVELS: Entry $${fmt(lastPrice,3)} | SL: $${fmt(lastPrice-(h4atr||0)*1.8,3
 
 USER QUESTION: ${query}
 
-Provide concise multi-timeframe analysis: H4 trend direction (higher timeframe bias), H1 entry timing, RSI/MACD confluence across both TFs, entry validity, key S/R levels, and SPCX-specific risks. Max 320 words.`;
+Provide concise multi-timeframe analysis: H4 trend direction, H1 entry timing, RSI/MACD confluence, entry validity, key levels, and risks. Max 320 words.`;
 
       const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
         method:'POST',
@@ -816,7 +820,6 @@ Provide concise multi-timeframe analysis: H4 trend direction (higher timeframe b
   }
   window.askGroq=askGroq;
 
-  // Initial canvas setup with delay
   setTimeout(resizeAll, 500);
 
 })();
