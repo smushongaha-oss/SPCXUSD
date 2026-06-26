@@ -60,6 +60,16 @@
         .candle-stat { background: #0f172a; padding: 8px; border-radius: 4px; text-align: center; }
         .candle-stat-label { color: #64748b; font-size: 10px; margin-bottom: 2px; }
         .candle-stat-value { color: #f1f5f9; font-weight: 600; font-size: 14px; }
+        .entry-tp-section { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .entry-tp-box { background: #0f172a; border-radius: 6px; padding: 12px; border-left: 4px solid #334155; }
+        .entry-tp-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+        .entry-tp-value { font-size: 18px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+        .entry-tp-risk { font-size: 10px; color: #64748b; }
+        .tp-level-1 { border-left-color: #10b981; }
+        .tp-level-2 { border-left-color: #06b6d4; }
+        .tp-level-3 { border-left-color: #f59e0b; }
+        .entry-buy { border-left-color: #10b981; }
+        .entry-sell { border-left-color: #ef4444; }
         .sandbox-warning {
             background: #1c1917;
             border: 1px solid #92400e;
@@ -73,14 +83,13 @@
         .sandbox-warning code { background: #292524; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px; color: #a3e635; }
         .source-badge { font-size: 11px; background: #0f172a; border: 1px solid #475569; color: #64748b; padding: 2px 8px; border-radius: 3px; }
         .footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 24px; }
-        @media (max-width:1024px) { .grid{grid-template-columns:1fr} .indicators-grid{grid-template-columns:1fr 1fr} }
-        @media (max-width:768px) { .price-display{grid-template-columns:1fr} .indicators-grid{grid-template-columns:1fr} .header-meta{flex-direction:column;gap:8px} }
+        @media (max-width:1024px) { .grid{grid-template-columns:1fr} .indicators-grid{grid-template-columns:1fr 1fr} .entry-tp-section{grid-template-columns:1fr 1fr} }
+        @media (max-width:768px) { .price-display{grid-template-columns:1fr} .indicators-grid{grid-template-columns:1fr} .entry-tp-section{grid-template-columns:1fr} .header-meta{flex-direction:column;gap:8px} }
     </style>
 </head>
 <body>
 <div class="container">
 
-    <!-- Sandbox warning — shown if fetch fails due to iframe restrictions -->
     <div class="sandbox-warning" id="sandbox-warning">
         <h3>⚠️ Browser Sandbox Detected</h3>
         <p>This dashboard is being previewed inside a restricted iframe (Claude artifact viewer), which blocks all external API calls. This is a preview environment limitation — not a code bug.</p>
@@ -143,6 +152,42 @@
         </div>
 
         <div class="card grid-full">
+            <h3 style="font-size:14px;margin-bottom:16px;color:#f1f5f9;">Entry Points & Take Profit Targets</h3>
+            <div class="entry-tp-section" id="entry-tp-container">
+                <div class="entry-tp-box entry-buy">
+                    <div class="entry-tp-label">Entry</div>
+                    <div class="entry-tp-value" id="entry-price">--</div>
+                    <div class="entry-tp-risk" id="entry-note">Calculating...</div>
+                </div>
+                <div class="entry-tp-box tp-level-1">
+                    <div class="entry-tp-label">TP 1 (1:1)</div>
+                    <div class="entry-tp-value" id="tp1-price">--</div>
+                    <div class="entry-tp-risk" id="tp1-info">Risk/Reward: --</div>
+                </div>
+                <div class="entry-tp-box tp-level-2">
+                    <div class="entry-tp-label">TP 2 (1:2)</div>
+                    <div class="entry-tp-value" id="tp2-price">--</div>
+                    <div class="entry-tp-risk" id="tp2-info">Risk/Reward: --</div>
+                </div>
+                <div class="entry-tp-box tp-level-1" style="grid-column:1;">
+                    <div class="entry-tp-label">Risk per Trade</div>
+                    <div class="entry-tp-value" id="risk-amount">--</div>
+                    <div class="entry-tp-risk" id="risk-note">0.01 lot @ $--</div>
+                </div>
+                <div class="entry-tp-box tp-level-3" style="grid-column:2;">
+                    <div class="entry-tp-label">TP 3 (1:3)</div>
+                    <div class="entry-tp-value" id="tp3-price">--</div>
+                    <div class="entry-tp-risk" id="tp3-info">Risk/Reward: --</div>
+                </div>
+                <div class="entry-tp-box" style="border-left-color:#64748b;grid-column:3;">
+                    <div class="entry-tp-label">Stop Loss</div>
+                    <div class="entry-tp-value" id="sl-price">--</div>
+                    <div class="entry-tp-risk" id="sl-info">Max Loss: --</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card grid-full">
             <h3 style="font-size:16px;margin-bottom:12px;">Technical Indicators (H4)</h3>
             <div class="indicators-grid">
                 <div class="indicator"><div class="indicator-name">EMA 12</div><div class="indicator-value" id="ema12">--</div><div class="indicator-status" id="ema12-status">--</div></div>
@@ -166,13 +211,12 @@
 </div>
 
 <script>
-// ─── Config ───────────────────────────────────────────────────────────────────
 const SYMBOL   = 'SPCXUSDT';
-const INTERVAL = '240';   // Bybit: minutes. 240 = 4H
+const INTERVAL = '240';
 const LIMIT    = 100;
+const LOT_SIZE = 0.01;
+const ATR_MULTIPLIER = 1.5;
 
-// Multiple REST endpoints — tries them in order until one works
-// allorigins.win is a free public CORS proxy as final fallback
 const REST_ENDPOINTS = [
     `https://api.bybit.com/v5/market/kline?category=linear&symbol=${SYMBOL}&interval=${INTERVAL}&limit=${LIMIT}`,
     `https://api.bytick.com/v5/market/kline?category=linear&symbol=${SYMBOL}&interval=${INTERVAL}&limit=${LIMIT}`,
@@ -182,7 +226,6 @@ const REST_ENDPOINTS = [
 const WS_URL = 'wss://stream.bybit.com/v5/public/linear';
 const WS_TOPIC = `kline.${INTERVAL}.${SYMBOL}`;
 
-// ─── State ────────────────────────────────────────────────────────────────────
 let candles = [];
 let chart = null;
 let ws = null;
@@ -193,7 +236,6 @@ let reconnectDelay = 2000;
 const MAX_RECONNECT = 10;
 let isSandboxed = false;
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
 async function init() {
     reconnectAttempts = 0;
     reconnectDelay = 2000;
@@ -208,7 +250,6 @@ function retryLoad() {
     init();
 }
 
-// ─── Historical REST load ─────────────────────────────────────────────────────
 async function loadHistory() {
     for (let i = 0; i < REST_ENDPOINTS.length; i++) {
         try {
@@ -221,14 +262,12 @@ async function loadHistory() {
 
             let json = await res.json();
 
-            // allorigins wraps the response in {contents: "...json string..."}
             if (isProxy && json.contents) {
                 json = JSON.parse(json.contents);
             }
 
             if (json.retCode !== 0) throw new Error(json.retMsg || 'Bybit API error');
 
-            // Bybit returns newest-first — reverse to chronological
             const list = json.result.list.reverse();
             candles = list.map(k => ({
                 time: parseInt(k[0]),
@@ -248,7 +287,6 @@ async function loadHistory() {
         }
     }
 
-    // All endpoints failed — likely sandbox
     isSandboxed = true;
     document.getElementById('sandbox-warning').style.display = 'block';
     setStatus('disconnected', 'Blocked by sandbox — open file locally');
@@ -258,7 +296,6 @@ async function loadHistory() {
     return false;
 }
 
-// ─── WebSocket ────────────────────────────────────────────────────────────────
 function connectWS() {
     try {
         ws = new WebSocket(WS_URL);
@@ -321,7 +358,6 @@ function scheduleReconnect() {
     reconnectTimer = setTimeout(connectWS, reconnectDelay);
 }
 
-// ─── Indicators ───────────────────────────────────────────────────────────────
 function emaArray(period) {
     const k = 2 / (period + 1);
     const arr = [candles[0].close];
@@ -366,23 +402,85 @@ function calcMACD() {
     return { macd, signal: sig, histogram: macd - sig };
 }
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+function findRecentSwings() {
+    const lookback = 5;
+    let recent_high = candles.at(-1).high, recent_low = candles.at(-1).low;
+    for (let i = Math.max(0, candles.length - lookback); i < candles.length; i++) {
+        recent_high = Math.max(recent_high, candles[i].high);
+        recent_low = Math.min(recent_low, candles[i].low);
+    }
+    return { recent_high, recent_low };
+}
+
+function fmt(n) {
+    if (n >= 1000) return '$' + n.toFixed(2);
+    if (n >= 10)   return '$' + n.toFixed(3);
+    return '$' + n.toFixed(4);
+}
+
 function update() {
     if (candles.length < 27) return;
     const e12 = emaLast(12), e26 = emaLast(26);
     const rsi = calcRSI(14), atr = calcATR(14), macd = calcMACD();
     updateMetrics(e12, e26, rsi, atr, macd);
+    calculateEntryAndTP(e12, e26, rsi, atr);
     renderChart();
     generateSignal(e12, e26, rsi, macd);
     document.getElementById('last-update').textContent =
         'Last Update: ' + new Date().toLocaleTimeString('en-US', { hour12: false }) + ' UTC';
 }
 
-function fmt(n) {
-    // Auto-format price — adjust decimal places by magnitude
-    if (n >= 1000) return '$' + n.toFixed(2);
-    if (n >= 10)   return '$' + n.toFixed(3);
-    return '$' + n.toFixed(4);
+function calculateEntryAndTP(e12, e26, rsi, atr) {
+    const price = candles.at(-1).close;
+    const swings = findRecentSwings();
+    
+    let entry, sl, signal_dir;
+    const bulls = [e12>e26, rsi>50, price>e12, price>e26].filter(Boolean).length;
+    const bears = 4 - bulls;
+    
+    if (bulls >= bears) {
+        signal_dir = 'BUY';
+        entry = Math.min(e12, price);
+        sl = swings.recent_low - atr * 0.5;
+    } else {
+        signal_dir = 'SELL';
+        entry = Math.max(e12, price);
+        sl = swings.recent_high + atr * 0.5;
+    }
+    
+    const risk = Math.abs(entry - sl);
+    const tp1 = signal_dir === 'BUY' ? entry + risk : entry - risk;
+    const tp2 = signal_dir === 'BUY' ? entry + risk * 2 : entry - risk * 2;
+    const tp3 = signal_dir === 'BUY' ? entry + risk * 3 : entry - risk * 3;
+    
+    const risk_usd = risk * LOT_SIZE * 1000;
+    const per_pip = LOT_SIZE * 10;
+    
+    document.getElementById('entry-price').textContent = fmt(entry);
+    document.getElementById('entry-note').textContent = `${(Math.abs(entry - price) / price * 100).toFixed(2)}% from current`;
+    
+    document.getElementById('tp1-price').textContent = fmt(tp1);
+    document.getElementById('tp1-info').textContent = `Risk: $${(risk_usd).toFixed(2)}`;
+    
+    document.getElementById('tp2-price').textContent = fmt(tp2);
+    document.getElementById('tp2-info').textContent = `Risk: $${(risk_usd * 2).toFixed(2)}`;
+    
+    document.getElementById('tp3-price').textContent = fmt(tp3);
+    document.getElementById('tp3-info').textContent = `Risk: $${(risk_usd * 3).toFixed(2)}`;
+    
+    document.getElementById('sl-price').textContent = fmt(sl);
+    document.getElementById('sl-info').textContent = `Risk: $${risk_usd.toFixed(2)}`;
+    
+    document.getElementById('risk-amount').textContent = '$' + risk_usd.toFixed(2);
+    document.getElementById('risk-note').textContent = `${LOT_SIZE} lot @ ${per_pip.toFixed(2)} per pip`;
+    
+    const container = document.getElementById('entry-tp-container');
+    const entryEl = container.querySelector('.entry-buy');
+    if (signal_dir === 'SELL') {
+        entryEl.className = 'entry-tp-box entry-sell';
+    } else {
+        entryEl.className = 'entry-tp-box entry-buy';
+    }
 }
 
 function updateMetrics(e12, e26, rsi, atr, macd) {
@@ -485,7 +583,6 @@ function setStatus(state, text) {
     document.getElementById('status-text').textContent = text;
 }
 
-// ─── Start ────────────────────────────────────────────────────────────────────
 init();
 </script>
 </body>
