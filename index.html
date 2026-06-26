@@ -374,10 +374,13 @@
 <script>
 // ─── Config ───────────────────────────────────────────────────────────────────
 const SYM = 'SPCXUSDT', IV = '240', LIM = 200;
+const BYBIT_BASE = 'https://api.bybit.com/v5/market/kline?category=linear&symbol=SPCXUSDT&interval=240&limit=200';
+const BYBIT_ALT  = 'https://api.bytick.com/v5/market/kline?category=linear&symbol=SPCXUSDT&interval=240&limit=200';
 const ENDPOINTS = [
-    `https://api.bybit.com/v5/market/kline?category=linear&symbol=${SYM}&interval=${IV}&limit=${LIM}`,
-    `https://api.bytick.com/v5/market/kline?category=linear&symbol=${SYM}&interval=${IV}&limit=${LIM}`,
-    `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.bybit.com/v5/market/kline?category=linear&symbol=${SYM}&interval=${IV}&limit=${LIM}`)}`,
+    BYBIT_BASE,
+    BYBIT_ALT,
+    'https://api.allorigins.win/get?url=' + encodeURIComponent(BYBIT_BASE),
+    'https://corsproxy.io/?url=' + encodeURIComponent(BYBIT_BASE),
 ];
 const WS_URL   = 'wss://stream.bybit.com/v5/public/linear';
 const WS_TOPIC = `kline.${IV}.${SYM}`;
@@ -391,10 +394,12 @@ const MAX_RECONN = 10;
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function init() {
-    reconnAttempts = 0; reconnDelay = 2000;
-    setConn('wait','Connecting...');
-    const ok = await loadHistory();
-    if (ok) connectWS();
+    reconnAttempts = 0; reconnDelay = 2000; historyLoaded = false;
+    setConn('wait', 'Connecting...');
+    // Always connect WS — it will load history itself if REST fails
+    connectWS();
+    // Also try REST in parallel (works when served over http://, fails on file://)
+    loadHistory();
 }
 function retryLoad() {
     document.getElementById('retry-btn').style.display = 'none';
@@ -410,66 +415,146 @@ function fetchWithTimeout(url, ms) {
 }
 
 async function loadHistory() {
+    let lastErr = '';
     for (let i = 0; i < ENDPOINTS.length; i++) {
         try {
-            setConn('wait', `Trying source ${i+1}/${ENDPOINTS.length}...`);
-            const isProxy = ENDPOINTS[i].includes('allorigins');
-            const r = await fetchWithTimeout(ENDPOINTS[i], 9000);
-            if (!r.ok) continue;
+            setConn('wait', 'Trying source ' + (i+1) + '/' + ENDPOINTS.length + '...');
+            const isProxy = ENDPOINTS[i].includes('allorigins') || ENDPOINTS[i].includes('corsproxy');
+            const r = await fetchWithTimeout(ENDPOINTS[i], 10000);
+            if (!r.ok) { lastErr = 'HTTP ' + r.status; continue; }
             let j = await r.json();
             if (isProxy && j.contents) j = JSON.parse(j.contents);
             if (j.retCode !== 0) throw new Error(j.retMsg);
-            C = j.result.list.reverse().map(k => ({
+            const list = j.result.list;
+            if (!list || !list.length) throw new Error('Empty response');
+            const fetched = list.reverse().map(k => ({
                 time: +k[0], open: +k[1], high: +k[2], low: +k[3],
                 close: +k[4], volume: +k[5], isClosed: true
             }));
-            console.log(`Loaded ${C.length} candles via source ${i+1}`);
-            tick();
+            // Only overwrite if REST gave us more candles than WS has so far
+            if (fetched.length > C.length) {
+                C = fetched;
+                historyLoaded = true;
+                console.log('REST loaded ' + C.length + ' candles via source ' + (i+1));
+                document.getElementById('sw').style.display = 'none';
+                tick();
+            } else {
+                console.log('REST ok but WS already has ' + C.length + ' candles — keeping WS data');
+            }
             return true;
-        } catch(e) { console.warn(`Source ${i+1} failed:`, e.message); }
+        } catch(e) { lastErr = e.message; console.warn('Source ' + (i+1) + ' failed:', e.message); }
     }
-    document.getElementById('sw').style.display = 'block';
-    setConn('off','Blocked — open file locally');
-    document.getElementById('sig-reason').textContent = '⚠ All sources blocked. Download and open this file directly in your browser.';
+    // Only show sandbox warning if error looks like a blocked-fetch (not a network/DNS error)
+    const looksLikeSandbox = lastErr.includes('postMessage') || lastErr.includes('cloned') || lastErr.includes('Failed to fetch');
+    if (looksLikeSandbox) {
+        document.getElementById('sw').style.display = 'block';
+        setConn('off', 'Blocked — open file locally');
+        document.getElementById('sig-reason').textContent = '⚠ All sources blocked. Download and open this file directly in your browser.';
+    } else {
+        setConn('off', 'API unreachable — retrying via WS');
+        document.getElementById('sig-reason').textContent = 'REST load failed (' + lastErr + ') — connecting via WebSocket for live candles.';
+    }
     document.getElementById('retry-btn').style.display = 'inline-block';
     return false;
 }
 
 // ─── WebSocket ────────────────────────────────────────────────────────────────
+// Bybit's V5 WebSocket supports a kline history request on the same connection.
+// We use this as the primary history source when REST is blocked (403 on file://).
+let historyLoaded = false;
+let histReqId = 'hist_' + Date.now();
+
 function connectWS() {
     try { ws = new WebSocket(WS_URL); } catch(e) { sched(); return; }
+
     ws.onopen = () => {
-        setConn('live','Live · H4');
         reconnAttempts = 0; reconnDelay = 2000;
-        ws.send(JSON.stringify({ op:'subscribe', args:[WS_TOPIC] }));
+        setConn('wait', 'Loading history via WS...');
+
+        // 1. Request historical klines over WebSocket
+        //    Bybit V5 public WS supports: op:"kline", req_id, args
+        ws.send(JSON.stringify({
+            req_id: histReqId,
+            op: 'kline',
+            args: [ IV + '.' + SYM, LIM ]
+        }));
+
+        // 2. Subscribe to live updates simultaneously
+        ws.send(JSON.stringify({ op: 'subscribe', args: [WS_TOPIC] }));
+
+        // Heartbeat
         pingTimer = setInterval(() => {
             if (ws && ws.readyState === WebSocket.OPEN)
-                ws.send(JSON.stringify({ op:'ping' }));
+                ws.send(JSON.stringify({ op: 'ping' }));
         }, 20000);
     };
+
     ws.onmessage = e => {
-        const m = JSON.parse(e.data);
-        if (!m.topic || !m.topic.startsWith('kline.')) return;
-        const d = m.data[0];
-        const candle = { time:d.start, open:+d.open, high:+d.high, low:+d.low,
-            close:+d.close, volume:+d.volume, isClosed:d.confirm };
-        const last = C.at(-1);
-        if (last && last.time === candle.time) C[C.length-1] = candle;
-        else if (candle.isClosed || !last || candle.time > last.time) {
-            C.push(candle);
-            if (C.length > LIM+1) C.shift();
+        let m;
+        try { m = JSON.parse(e.data); } catch { return; }
+
+        // Pong / op confirmations — ignore
+        if (m.op === 'pong' || m.op === 'subscribe') return;
+
+        // ── History response (req_id matches, retCode present) ──
+        // Bybit returns historical klines as: { req_id, retCode, result:{ list:[...] } }
+        if (m.req_id === histReqId && m.result && m.result.list) {
+            const list = m.result.list;
+            // list may be newest-first or oldest-first depending on version
+            // Sort ascending by timestamp to be safe
+            const sorted = [...list].sort((a,b) => +a[0] - +b[0]);
+            C = sorted.map(k => ({
+                time: +k[0], open: +k[1], high: +k[2], low: +k[3],
+                close: +k[4], volume: +k[5], isClosed: true
+            }));
+            historyLoaded = true;
+            setConn('live', 'Live · H4 · ' + C.length + ' bars loaded');
+            console.log('WS history loaded: ' + C.length + ' candles');
+            if (C.length >= 2) tick();
+            return;
         }
-        if (C.length >= 50) tick();
+
+        // ── Live kline stream ──
+        if (m.topic && m.topic.startsWith('kline.')) {
+            const d = m.data[0];
+            const candle = {
+                time: d.start, open: +d.open, high: +d.high, low: +d.low,
+                close: +d.close, volume: +d.volume, isClosed: d.confirm
+            };
+            const last = C.at(-1);
+            if (last && last.time === candle.time) {
+                C[C.length-1] = candle;
+            } else if (!last || candle.time > last.time) {
+                C.push(candle);
+                if (C.length > LIM + 1) C.shift();
+            }
+            if (!historyLoaded) setConn('wait', 'Accumulating bars: ' + C.length + '/' + LIM + '...');
+            else setConn('live', 'Live · H4');
+            if (C.length >= 2) tick();
+        }
     };
-    ws.onerror = () => setConn('off','WS Error');
-    ws.onclose = () => { clearInterval(pingTimer); setConn('off','Disconnected'); sched(); };
+
+    ws.onerror = (err) => {
+        console.error('WS error', err);
+        setConn('off', 'WS Error');
+    };
+    ws.onclose = () => {
+        clearInterval(pingTimer);
+        historyLoaded = false;
+        setConn('off', 'Disconnected');
+        sched();
+    };
 }
+
 function sched() {
     if (reconnAttempts >= MAX_RECONN) {
-        setConn('off','Max retries'); document.getElementById('retry-btn').style.display='inline-block'; return;
+        setConn('off', 'Max retries exceeded');
+        document.getElementById('retry-btn').style.display = 'inline-block';
+        return;
     }
-    reconnAttempts++; reconnDelay = Math.min(reconnDelay*1.5,30000);
-    setConn('wait',`Reconnecting ${reconnAttempts}/${MAX_RECONN}...`);
+    reconnAttempts++;
+    reconnDelay = Math.min(reconnDelay * 1.5, 30000);
+    setConn('wait', 'Reconnecting ' + reconnAttempts + '/' + MAX_RECONN + '...');
     setTimeout(connectWS, reconnDelay);
 }
 
@@ -592,19 +677,20 @@ function calcOBV() {
 
 // ─── Tick ─────────────────────────────────────────────────────────────────────
 function tick() {
-    if (C.length < 50) return;
+    if (C.length < 2) return;
 
+    const n = C.length;
     const price  = C.at(-1).close;
-    const e12    = emaLast(12);
-    const e26    = emaLast(26);
-    const e50    = C.length>=50 ? emaLast(50) : null;
-    const e200   = C.length>=200 ? emaLast(200) : null;
-    const rsi    = calcRSI(14);
-    const stoch  = calcStochRSI();
-    const wr     = calcWR(14);
-    const atr    = calcATR(14);
-    const macd   = calcMACD();
-    const bb     = calcBB(20,2);
+    const e12    = n>=13  ? emaLast(12)  : null;
+    const e26    = n>=27  ? emaLast(26)  : null;
+    const e50    = n>=50  ? emaLast(50)  : null;
+    const e200   = n>=200 ? emaLast(200) : null;
+    const rsi    = n>=15  ? calcRSI(14)  : null;
+    const stoch  = n>=40  ? calcStochRSI() : { k:null, d:null, kArr:[], dArr:[] };
+    const wr     = n>=15  ? calcWR(14)   : { last:null, arr:[] };
+    const atr    = n>=2   ? calcATR(Math.min(14,n-1)) : null;
+    const macd   = n>=27  ? calcMACD()   : null;
+    const bb     = n>=21  ? calcBB(20,2) : null;
     const obv    = calcOBV();
 
     updatePrice(price);
@@ -634,51 +720,67 @@ function updatePrice(price) {
 
 // ─── Indicator tiles ──────────────────────────────────────────────────────────
 function updateInds(price,e12,e26,e50,e200,rsi,stoch,wr,atr,macd,bb,obv) {
-    setTile('i-e12', fmt(e12), price>e12?'bull':'bear', price>e12?'Above':'Below');
-    setTile('i-e26', fmt(e26), price>e26?'bull':'bear', price>e26?'Above':'Below');
-    setTile('i-e50', e50?fmt(e50):'N/A', e50?(price>e50?'bull':'bear'):'neut', e50?(price>e50?'Above':'Below'):'Need 50 bars');
-    setTile('i-e200',e200?fmt(e200):'N/A', e200?(price>e200?'bull':'bear'):'neut', e200?(price>e200?'Above':'Below'):'Need 200 bars');
+    setTile('i-e12',  e12  ? fmt(e12)  : '--', e12?(price>e12?'bull':'bear'):'neut', e12?(price>e12?'Above':'Below'):'Need 13+ bars');
+    setTile('i-e26',  e26  ? fmt(e26)  : '--', e26?(price>e26?'bull':'bear'):'neut', e26?(price>e26?'Above':'Below'):'Need 27+ bars');
+    setTile('i-e50',  e50  ? fmt(e50)  : '--', e50?(price>e50?'bull':'bear'):'neut', e50?(price>e50?'Above':'Below'):'Need 50+ bars');
+    setTile('i-e200', e200 ? fmt(e200) : '--', e200?(price>e200?'bull':'bear'):'neut', e200?(price>e200?'Above':'Below'):'Need 200+ bars');
 
-    const rsiCls = rsi>70?'bear':rsi<30?'bull':rsi>50?'bull':'bear';
-    const rsiLbl = rsi>70?'Overbought':rsi<30?'Oversold':rsi>50?'Bullish':'Bearish';
-    setTile('i-rsi', rsi.toFixed(1), rsiCls, rsiLbl);
+    if (rsi != null) {
+        const rsiCls = rsi>70?'bear':rsi<30?'bull':rsi>50?'bull':'bear';
+        setTile('i-rsi', rsi.toFixed(1), rsiCls, rsi>70?'Overbought':rsi<30?'Oversold':rsi>50?'Bullish':'Bearish');
+    } else setTile('i-rsi','--','neut','Need 15+ bars');
 
-    const kCls = stoch.k>80?'bear':stoch.k<20?'bull':stoch.k>50?'bull':'bear';
-    setTile('i-sk', stoch.k.toFixed(1), kCls, stoch.k>80?'Overbought':stoch.k<20?'Oversold':stoch.k>50?'Bullish':'Bearish');
+    if (stoch.k != null) {
+        const kCls = stoch.k>80?'bear':stoch.k<20?'bull':stoch.k>50?'bull':'bear';
+        setTile('i-sk', stoch.k.toFixed(1), kCls, stoch.k>80?'Overbought':stoch.k<20?'Oversold':stoch.k>50?'Bullish':'Bearish');
+    } else setTile('i-sk','--','neut','Need 40+ bars');
 
-    const wrCls = wr.last>-20?'bear':wr.last<-80?'bull':wr.last>-50?'bull':'bear';
-    setTile('i-wr', wr.last.toFixed(1), wrCls, wr.last>-20?'Overbought':wr.last<-80?'Oversold':'Neutral');
+    if (wr.last != null) {
+        const wrCls = wr.last>-20?'bear':wr.last<-80?'bull':wr.last>-50?'bull':'bear';
+        setTile('i-wr', wr.last.toFixed(1), wrCls, wr.last>-20?'Overbought':wr.last<-80?'Oversold':'Neutral');
+    } else setTile('i-wr','--','neut','Need 15+ bars');
 
-    setTile('i-atr', fmt(atr), 'neut', 'Volatility');
+    setTile('i-atr', atr ? fmt(atr) : '--', 'neut', 'Volatility');
 
-    const mCls = macd.macd>macd.signal?'bull':'bear';
-    setTile('i-macd',  macd.macd.toFixed(4), mCls, macd.macd>0?'+':'−');
-    setTile('i-msig',  macd.signal.toFixed(4), mCls, 'Signal Line');
-    setTile('i-mhist', macd.histogram.toFixed(4), macd.histogram>0?'bull':'bear', macd.histogram>0?'Hist +':'Hist −');
+    if (macd) {
+        const mCls = macd.macd>macd.signal?'bull':'bear';
+        setTile('i-macd',  macd.macd.toFixed(4), mCls, macd.macd>0?'+':'−');
+        setTile('i-msig',  macd.signal.toFixed(4), mCls, 'Signal Line');
+        setTile('i-mhist', macd.histogram.toFixed(4), macd.histogram>0?'bull':'bear', macd.histogram>0?'Hist +':'Hist −');
+    } else {
+        setTile('i-macd','--','neut','Need 27+ bars');
+        setTile('i-msig','--','neut','--');
+        setTile('i-mhist','--','neut','--');
+    }
 
     const obvCls = obv.trend==='Rising'?'bull':obv.trend==='Falling'?'bear':'neut';
     setTile('i-obv', obv.trend, obvCls, (obv.last/1e6).toFixed(2)+'M cumulative');
 
     // Bollinger
-    const bbU = bb.upper.at(-1), bbM = bb.mid.at(-1), bbL = bb.lower.at(-1);
-    const bbPct = bb.pctB.at(-1), bbBW = bb.bw.at(-1);
-    el('bb-up').textContent  = bbU ? fmt(bbU) : '--';
-    el('bb-mid').textContent = bbM ? fmt(bbM) : '--';
-    el('bb-lo').textContent  = bbL ? fmt(bbL) : '--';
-    el('bb-bw').textContent  = bbBW ? bbBW.toFixed(2)+'%' : '--';
-    const bbPctEl = el('bb-pct');
-    bbPctEl.textContent = bbPct ? bbPct.toFixed(1)+'%' : '--';
-    bbPctEl.style.color = bbPct>80?'var(--red)':bbPct<20?'var(--green)':'var(--text-sec)';
-    const bbPos = el('bb-pos');
-    if (bbU && price>bbU)      { bbPos.textContent='Above Band'; bbPos.style.color='var(--red)'; }
-    else if (bbL && price<bbL) { bbPos.textContent='Below Band'; bbPos.style.color='var(--green)'; }
-    else                       { bbPos.textContent='Inside Band'; bbPos.style.color='var(--text-sec)'; }
+    if (bb) {
+        const bbU = bb.upper.at(-1), bbM = bb.mid.at(-1), bbL = bb.lower.at(-1);
+        const bbPct = bb.pctB.at(-1), bbBW = bb.bw.at(-1);
+        el('bb-up').textContent  = bbU ? fmt(bbU) : '--';
+        el('bb-mid').textContent = bbM ? fmt(bbM) : '--';
+        el('bb-lo').textContent  = bbL ? fmt(bbL) : '--';
+        el('bb-bw').textContent  = bbBW ? bbBW.toFixed(2)+'%' : '--';
+        const bbPctEl = el('bb-pct');
+        bbPctEl.textContent = bbPct ? bbPct.toFixed(1)+'%' : '--';
+        bbPctEl.style.color = bbPct>80?'var(--red)':bbPct<20?'var(--green)':'var(--text-sec)';
+        const bbPos = el('bb-pos');
+        if (bbU && price>bbU)      { bbPos.textContent='Above Band'; bbPos.style.color='var(--red)'; }
+        else if (bbL && price<bbL) { bbPos.textContent='Below Band'; bbPos.style.color='var(--green)'; }
+        else                       { bbPos.textContent='Inside Band'; bbPos.style.color='var(--text-sec)'; }
+    } else {
+        ['bb-up','bb-mid','bb-lo','bb-bw','bb-pct','bb-pos'].forEach(id => el(id).textContent='--');
+    }
 }
 
 // ─── Trade Levels ─────────────────────────────────────────────────────────────
 function updateTrade(price, atr, macd, e12, e26, rsi) {
+    if (!atr) { ['t-entry','t-sl','t-tp1','t-tp2','t-tp3'].forEach(id=>el(id).textContent='--'); return; }
     // Direction from majority of signals
-    const bullish = (e12>e26) + (rsi>50) + (price>e12) + (macd.histogram>0) > 2;
+    const bullish = ((e12&&e26?e12>e26:0) + (rsi?rsi>50:0) + (e12?price>e12:0) + (macd?macd.histogram>0:0)) > 2;
     const entry = price;
     const sl   = bullish ? entry - atr     : entry + atr;
     const tp1  = bullish ? entry + atr*1.5 : entry - atr*1.5;
@@ -699,7 +801,7 @@ function updateTrade(price, atr, macd, e12, e26, rsi) {
 function generateSignal(price,e12,e26,e50,rsi,stoch,macd,bb,obv,wr) {
     const bbU = bb.upper.at(-1), bbL = bb.lower.at(-1);
     const bulls = [
-        e12>e26,
+        e12&&e26&&e12>e26,
         rsi>50,
         price>e12,
         macd.macd>macd.signal && macd.histogram>0,
@@ -734,69 +836,71 @@ function renderCharts(e12arr_fn, e26, e50, e200, bb, macd, wr, obv, stoch, rsi) 
     const labels = C.map((c,i) => {
         if (i % Math.max(1,Math.floor(C.length/10)) !== 0) return '';
         const d=new Date(c.time);
-        return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}h`;
+        return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+'h';
     });
 
-    const e12a = emaArr(12), e26a = emaArr(26);
+    const e12a  = C.length>=13  ? emaArr(12)  : null;
+    const e26a  = C.length>=27  ? emaArr(26)  : null;
     const e50a  = C.length>=50  ? emaArr(50)  : null;
     const e200a = C.length>=200 ? emaArr(200) : null;
 
     // Price chart
     destroyChart('priceChart');
-    const pc = getCtx('priceChart');
-    charts.price = new Chart(pc, {
-        type:'line',
-        data:{ labels, datasets:[
-            { label:'Price', data:C.map(c=>c.close), borderColor:'#00d4ff', backgroundColor:'rgba(0,212,255,0.04)', borderWidth:2, fill:true, tension:0.3, pointRadius:0 },
-            { label:'EMA12', data:e12a, borderColor:'#00e57a', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
-            { label:'EMA26', data:e26a, borderColor:'#ffb340', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
-            ...(e50a  ? [{ label:'EMA50',  data:e50a,  borderColor:'#a78bfa', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 }] : []),
-            ...(e200a ? [{ label:'EMA200', data:e200a, borderColor:'#f472b6', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0, borderDash:[4,4] }] : []),
-            { label:'BB Upper', data:bb.upper, borderColor:'rgba(100,130,160,0.5)', borderWidth:1, fill:false, tension:0.3, pointRadius:0, borderDash:[3,3] },
-            { label:'BB Mid',   data:bb.mid,   borderColor:'rgba(100,130,160,0.3)', borderWidth:1, fill:false, tension:0.3, pointRadius:0 },
-            { label:'BB Lower', data:bb.lower, borderColor:'rgba(100,130,160,0.5)', borderWidth:1, fill:'+6', backgroundColor:'rgba(0,130,255,0.03)', tension:0.3, pointRadius:0, borderDash:[3,3] },
-        ]},
-        options: chartOpts(true)
+    const priceDS = [
+        { label:'Price', data:C.map(c=>c.close), borderColor:'#00d4ff', backgroundColor:'rgba(0,212,255,0.04)', borderWidth:2, fill:true, tension:0.3, pointRadius:0 },
+    ];
+    if (e12a)  priceDS.push({ label:'EMA12',  data:e12a,  borderColor:'#00e57a', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 });
+    if (e26a)  priceDS.push({ label:'EMA26',  data:e26a,  borderColor:'#ffb340', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 });
+    if (e50a)  priceDS.push({ label:'EMA50',  data:e50a,  borderColor:'#a78bfa', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 });
+    if (e200a) priceDS.push({ label:'EMA200', data:e200a, borderColor:'#f472b6', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0, borderDash:[4,4] });
+    if (bb) {
+        priceDS.push({ label:'BB Upper', data:bb.upper, borderColor:'rgba(100,130,160,0.5)', borderWidth:1, fill:false, tension:0.3, pointRadius:0, borderDash:[3,3] });
+        priceDS.push({ label:'BB Mid',   data:bb.mid,   borderColor:'rgba(100,130,160,0.3)', borderWidth:1, fill:false, tension:0.3, pointRadius:0 });
+        priceDS.push({ label:'BB Lower', data:bb.lower, borderColor:'rgba(100,130,160,0.5)', borderWidth:1, fill:'+6', backgroundColor:'rgba(0,130,255,0.03)', tension:0.3, pointRadius:0, borderDash:[3,3] });
+    }
+    charts.price = new Chart(getCtx('priceChart'), {
+        type:'line', data:{ labels, datasets:priceDS }, options: chartOpts(true)
     });
 
     // RSI + Stoch RSI
     destroyChart('rsiChart');
-    const rsiSeries = buildRSISeries();
-    const stochKArr = stoch.kArr ?? [];
-    const rsiLabels = labels.slice(-rsiSeries.length);
+    const rsiSeries = C.length>=15 ? buildRSISeries() : [];
+    const stochKArr = (stoch && stoch.kArr) ? stoch.kArr : [];
     charts.rsi = new Chart(getCtx('rsiChart'), {
         type:'line',
-        data:{ labels:labels.slice(-rsiSeries.length), datasets:[
-            { label:'RSI14', data:rsiSeries, borderColor:'#00d4ff', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
-            { label:'Stoch K', data:stochKArr.slice(-rsiSeries.length), borderColor:'#a78bfa', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
+        data:{ labels:labels.slice(-Math.max(rsiSeries.length,1)), datasets:[
+            { label:'RSI14',   data:rsiSeries, borderColor:'#00d4ff', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
+            { label:'Stoch K', data:stochKArr.slice(-rsiSeries.length||1), borderColor:'#a78bfa', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
         ]},
         options: chartOpts(false, [{value:70,color:'rgba(255,61,90,0.3)'},{value:30,color:'rgba(0,229,122,0.3)'},{value:50,color:'rgba(255,255,255,0.08)'}])
     });
 
     // MACD histogram
     destroyChart('macdChart');
-    charts.macd = new Chart(getCtx('macdChart'), {
-        type:'bar',
-        data:{ labels, datasets:[
-            { label:'Histogram', data:macd.mArr.map((v,i)=>v-macd.sArr[i]),
-              backgroundColor:macd.mArr.map((v,i)=>v-macd.sArr[i]>=0?'rgba(0,229,122,0.6)':'rgba(255,61,90,0.6)'),
-              borderColor:macd.mArr.map((v,i)=>v-macd.sArr[i]>=0?'#00e57a':'#ff3d5a'),
-              borderWidth:1 },
-            { type:'line', label:'MACD', data:macd.mArr, borderColor:'#00d4ff', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
-            { type:'line', label:'Signal', data:macd.sArr, borderColor:'#ffb340', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
-        ]},
-        options: chartOpts(false)
-    });
+    if (macd) {
+        const histData = macd.mArr.map((v,i)=>v-macd.sArr[i]);
+        charts.macd = new Chart(getCtx('macdChart'), {
+            type:'bar',
+            data:{ labels, datasets:[
+                { label:'Histogram', data:histData,
+                  backgroundColor:histData.map(v=>v>=0?'rgba(0,229,122,0.6)':'rgba(255,61,90,0.6)'),
+                  borderColor:histData.map(v=>v>=0?'#00e57a':'#ff3d5a'), borderWidth:1 },
+                { type:'line', label:'MACD',   data:macd.mArr, borderColor:'#00d4ff', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
+                { type:'line', label:'Signal', data:macd.sArr, borderColor:'#ffb340', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
+            ]},
+            options: chartOpts(false)
+        });
+    }
 
     // Williams %R
     destroyChart('wrChart');
-    charts.wr = new Chart(getCtx('wrChart'), {
-        type:'line',
-        data:{ labels, datasets:[
-            { label:'%R', data:wr.arr, borderColor:'#a78bfa', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 },
-        ]},
-        options: chartOpts(false, [{value:-20,color:'rgba(255,61,90,0.3)'},{value:-80,color:'rgba(0,229,122,0.3)'}])
-    });
+    if (wr && wr.arr && wr.arr.filter(v=>v!=null).length > 0) {
+        charts.wr = new Chart(getCtx('wrChart'), {
+            type:'line',
+            data:{ labels, datasets:[{ label:'%R', data:wr.arr, borderColor:'#a78bfa', borderWidth:1.5, fill:false, tension:0.3, pointRadius:0 }]},
+            options: chartOpts(false, [{value:-20,color:'rgba(255,61,90,0.3)'},{value:-80,color:'rgba(0,229,122,0.3)'}])
+        });
+    }
 
     // OBV
     destroyChart('obvChart');
