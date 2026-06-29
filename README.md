@@ -1,1 +1,1 @@
-# SPCXUSD
+# ZEC\USD
